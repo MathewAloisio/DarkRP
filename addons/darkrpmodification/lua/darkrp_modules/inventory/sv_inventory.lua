@@ -1,7 +1,7 @@
 --Dependencies: "skills", "item".
---TODO: Figure out how we are going to mostly efficiently network PLAYER:GetMaxInvWeight() and PLAYER:GetMaxInvSlots().
-local function recalculateInvWeight(playerid)
-	player.InvWeight = 0
+util.AddNetworkString("networkInventory")
+local function recalculateInvWeight(player)
+	player.InvWeight = 0.0
 	for slot=0,player:GetMaxInvSlots() do
 		if player.Inv[slot][ITEM_ID] != 0 then
 			player.InvWeight = player.InvWeight + items.Get(player.Inv[slot][ITEM_ID]).Weight
@@ -16,8 +16,11 @@ end
 hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory)
 
 local function networkInventory(player)
-	--TODO: serverside inventory networking.
-	--TODO: network player.InvWeight.
+	net.Start("networkInventory")
+		net.WriteFloat(player.InvWeight)
+		net.WriteDouble(player:GetMaxInvSlots())
+		net.WriteTable(player.Inv)
+	net.Send(player)
 end
 
 hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
@@ -46,9 +49,15 @@ end)
 
 local PLAYER = FindMetaTable("Player")
 
+function PLAYER:RecalculateMaxInvSlots()
+	local slots = 0
+	--TODO: Calculate MaxInvSlots()
+	ply.MaxInvSlots = slots
+end
+
 function PLAYER:GetMaxInvSlots()
 	--TODO: Donator MaxInvSlots and possibly backpacks, etc.
-	return MAX_INV_SLOTS
+	return ply.InvMaxSlots or MAX_INV_SLOTS
 end
 
 function PLAYER:CheckInv() --Check if the inventory is full
@@ -60,7 +69,7 @@ function PLAYER:CheckInv() --Check if the inventory is full
 	return false
 end
 
-function PLAYER:GetMaxInvWeight()
+function PLAYER:GetMaxInvWeight() --Can be mimicked clientside, no need to network.
 	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*5) --TODO: Make the skill system.
 end
 
