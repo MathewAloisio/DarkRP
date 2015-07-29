@@ -56,7 +56,6 @@ function PLAYER:RecalculateMaxInvSlots()
 end
 
 function PLAYER:GetMaxInvSlots()
-	--TODO: Donator MaxInvSlots and possibly backpacks, etc.
 	return ply.InvMaxSlots or MAX_INV_SLOTS
 end
 

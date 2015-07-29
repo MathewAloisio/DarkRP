@@ -13,6 +13,10 @@ function inventory.GetMaxInvWeight()
 	return MAX_INV_WEIGHT + (Levels["Strength"]*5)
 end
 
+function inventory.GetMaxInvSlots()
+	return MaxInvSlots
+end
+
 function inventory.CanHoldItem(id)
 	if (InvWeight + items.Get(id).Weight) > GetMaxInvWeight() then return false end
 	return true
@@ -61,3 +65,5 @@ function inventory.CheckInvItemEx(id) --Counts total amount of a specific item I
 	if count != 0 then return count end
 	return false
 end
+
+--TODO Actual inventory UI below.

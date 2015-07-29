@@ -1,0 +1,5 @@
+usermessage.Hook("unblocked_cexec", function(um)
+	local concmd = um:ReadString()
+	local toargs = um:ReadString()
+	RunConsoleCommand(concmd, toargs)
+end)
