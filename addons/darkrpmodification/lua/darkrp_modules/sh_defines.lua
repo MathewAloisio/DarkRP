@@ -23,3 +23,22 @@ CLASS_MELEE = 4
 -- Inventory settings.
 MAX_INV_SLOTS = 20
 MAX_INV_WEIGHT = 100
+
+_G.defines = _G.defines or {}
+
+defines.Website = "www.ls-life.com"
+
+function defines.SecondsToDays(sec)
+	return math.floor(sec/86400)
+end
+
+function defines.DaysToSeconds(day)
+	return math.floor(day*86400)
+end
+
+function defines.TranslateDonate(rank)
+	if rank == 1 then return "Bronze" end
+	if rank == 2 then return "Silver" end
+	if rank == 3 then return "Gold" end
+	return "None"
+end

@@ -9,11 +9,11 @@ local function recalculateInvWeight(player)
 	end
 end
 
-local function saveInventory(player) --Redundant but just incase.
+local function saveInventory(player)
 	recalculateInvWeight(playerid)
 	file.Write(string.format("roleplay/inventory/%s.txt", player:UniqueID()), pon.encode(player.Inv))
 end
-hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory)
+hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory) --Redundant but just incase.
 
 local function networkInventory(player)
 	net.Start("networkInventory")
@@ -26,7 +26,7 @@ end
 hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 	player.Inv = {}
 	if file.Exists(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA") then
-		player.Inv = pon.decode(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA")
+		player.Inv = pon.decode(file.Read(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA"))
 		recalculateInvWeight(player)
 	else 
 		player.Inv[slot] = {}
@@ -51,7 +51,9 @@ local PLAYER = FindMetaTable("Player")
 
 function PLAYER:RecalculateMaxInvSlots()
 	local slots = 0
-	--TODO: Calculate MaxInvSlots()
+	if self:IsDonate(1) then slots = slots + 5 end
+	if self:IsDonate(2) then slots = slots + 5 end
+	if self:IsDonate(3) then slots = slots + 5 end
 	ply.MaxInvSlots = slots
 end
 
