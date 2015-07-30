@@ -6,7 +6,7 @@ local function recalculateInvWeight(player)
 	for slot=0,player:GetMaxInvSlots() do
 		if player.Inv[slot][ITEM_ID] != 0 then
 			if items.IsStackable(player.Inv[slot][ITEM_ID]) then
-				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * items.GetWeight(player.Inv[slot][ITEM_Q])
+				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * items.GetWeight(player.Inv[slot][ITEM_Q]))
 			else
 				player.InvWeight = player.InvWeight + items.GetWeight(player.Inv[slot][ITEM_ID])
 			end
@@ -37,7 +37,7 @@ hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 		player.Inv[slot] = {}
 		for slot=0,player:GetMaxInvSlots() do
 			player.Inv[slot][ITEM_ID] = 0
-			player.Inv[slot][ITEM_Q]] = 0
+			player.Inv[slot][ITEM_Q] = 0
 			player.Inv[slot][ITEM_E] = 0
 			player.Inv[slot][ITEM_EX] = 0
 		end
@@ -74,7 +74,7 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 		if tbl.Type == TYPE_WEAPON and action == 0 then
 			if player:HasWeapon(tbl.WepClass) then DarkRP.Notify(player, 1, 4, "You already have this weapon equipped!") return end
 			local wep = player:Give(tbl.WepClass)
-			wep:SetClip1(inv[ITEM_E]))
+			wep:SetClip1(inv[ITEM_E])
 			player:RemoveInvItem(_, 0, slot)
 			player:SelectWeapon(tbl.WepClass)
 			wep.ItemID = tbl.ID
@@ -135,7 +135,7 @@ function PLAYER:GiveInvItem(id, quantity, e, ex)
 	for slot=0,self:GetMaxInvSlots() do
 		if self.Inv[slot][ITEM_ID] == 0 then
 			self.Inv[slot][ITEM_ID] = id
-			self.Inv[slot][ITEM_Q]] = quantity or 1
+			self.Inv[slot][ITEM_Q] = quantity or 1
 			self.Inv[slot][ITEM_E] = e or 0
 			self.Inv[slot][ITEM_EX] = ex or 0
 			saveInventory(self)
@@ -175,17 +175,17 @@ function PLAYER:RemoveInvItem(id, quantity, slot)
 			end
 		end
 	end
-	if slot == -1 return end -- Kill the function if their is no slot specified and the item wasn't found.
+	if slot == -1 then return end -- Kill the function if their is no slot specified and the item wasn't found.
 	if quantity == 0 or not items.IsStackable(id) then -- Remove all items.
 		self.Inv[slot][ITEM_ID] = 0
-		self.Inv[slot][ITEM_Q]] = 0
+		self.Inv[slot][ITEM_Q] = 0
 		self.Inv[slot][ITEM_E] = 0
 		self.Inv[slot][ITEM_EX] = 0
 	else -- Remove 'quantity' of item.
 		self.Inv[slot][ITEM_Q] = self.Inv[slot][ITEM_Q] - quantity
 		if self.Inv[slot][ITEM_Q] < 1 then
 			self.Inv[slot][ITEM_ID] = 0
-			self.Inv[slot][ITEM_Q]] = 0
+			self.Inv[slot][ITEM_Q] = 0
 			self.Inv[slot][ITEM_E] = 0
 			self.Inv[slot][ITEM_EX] = 0
 		end
@@ -199,7 +199,7 @@ function PLAYER:RemoveAllItem(id) -- Removes all occurances of an item with the 
 	for slot=0,self:GetMaxInvSlots() do
 			if self.Inv[slot][ITEM_ID] == id then
 			self.Inv[slot][ITEM_ID] = 0
-			self.Inv[slot][ITEM_Q]] = 0
+			self.Inv[slot][ITEM_Q] = 0
 			self.Inv[slot][ITEM_E] = 0
 			self.Inv[slot][ITEM_EX] = 0
 			fixInventory(self)
@@ -256,7 +256,7 @@ function PLAYER:DropInvItem(slot,force)
 		ex = self.Inv[slot][ITEM_EX]
 	}
 	self.Inv[slot][ITEM_ID] = 0
-	self.Inv[slot][ITEM_Q]] = 0
+	self.Inv[slot][ITEM_Q] = 0
 	self.Inv[slot][ITEM_E] = 0
 	self.Inv[slot][ITEM_EX] = 0
 	fixInventory(self)

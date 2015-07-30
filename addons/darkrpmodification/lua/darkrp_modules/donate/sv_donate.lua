@@ -24,10 +24,10 @@ hook.Add("PlayerInitialSpawn", "loadDonate", function(player)
 		if tbl.rank > 0 then
 			local dl = player:DonateDaysLeft()
 			if dl > 0 then --Not yet expired.
-				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! you're a %s donator and your rank is set to expire in %d days.", defines.TranslateDonate(tbl.rank), dl)
+				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! you're a %s donator and your rank is set to expire in %d days.", defines.TranslateDonate(tbl.rank), dl))
 			else --Expired.
 				player:SetDonate(0)
-				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! your %s donor status has expired. You can renew your donor status at %s/donate.", defines.TranslateDonate(tbl.rank), defines.Website)
+				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! your %s donor status has expired. You can renew your donor status at %s/donate.", defines.TranslateDonate(tbl.rank), defines.Website))
 			end
 		end
 	else 

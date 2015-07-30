@@ -42,11 +42,3 @@ function defines.TranslateDonate(rank)
 	if rank == 3 then return "Gold" end
 	return "None"
 end
-
-
---DarkRP Chat commands below:
-DarkRP.declareChatCommand{
-	command = "putgun",
-	description = "Store your current gun in your inventory.",
-	delay = 1.5
-}
