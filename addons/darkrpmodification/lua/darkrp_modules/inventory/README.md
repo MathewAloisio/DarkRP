@@ -4,6 +4,14 @@
 ## PLAYER meta functions ##
 
 
+* PLAYER:DropInvItem(slot,force) **[SERVER]**
+```
+    *drops the item in 'self.Inv[slot]' as loot via 'items.CreateLoot()'.
+	*force is an optional argument, if set to 1 it ignores the drop-item delay.
+    *returns true on success, false on failure.
+```
+
+
 * PLAYER:GetMaxInvSlots() **[SHARED]**
 ```
 
@@ -43,12 +51,12 @@
     * removes all occurrences of an item where 'items.Get(id).ID' matches 'id' in your inventory.
 
 ```
-* PLAYER:CanHoldItem(id) **[SHARED]**
+* PLAYER:CanHoldItem(id, quantity) **[SHARED]**
 ```
 
 
 
-    * returns true if the player can hold the weight of 'items.Get(id).Weight', false if they can't.
+    * returns true if the player can hold the weight of 'items.Get(id).Weight*quantity', false if they can't.
 
 ```
 * PLAYER:CheckInv() **[SHARED]**

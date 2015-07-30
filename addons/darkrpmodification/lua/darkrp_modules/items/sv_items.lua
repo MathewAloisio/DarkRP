@@ -7,11 +7,13 @@ function items.CreateLoot(id, quantity, e, ex, pos, ang)
 	ent:SetNWString("itemName",items.GetName(id, quantity))
 	ent:SetModel(tbl.Model)
 	ent:SetPos(pos)
-	ent:SetAngles(ang)
+	if ang then ent:SetAngles(ang) end
 	ent.ItemID = id
 	ent.Quantity = quantity
 	ent.E = e
 	ent.Ex = ex
 	ent:Spawn()
 	ent:Activate()	
+	if tbl.OnSpawn then tbl.OnSpawn(ent) end
+	return ent
 end	

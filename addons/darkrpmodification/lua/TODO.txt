@@ -1,4 +1,4 @@
-1. Finish Inventory. (menu, PLAYER:DropInvItem(slot) [use: items.CreateLoot()], weapon equipping/unequipping.)
+1. Finish Inventory. (menu, weapon equipping/unequipping.)
 2. Finish skills.
 3. Code NPC banks.
 4. Code a drug system. (with an NPC to sell drugs to.)

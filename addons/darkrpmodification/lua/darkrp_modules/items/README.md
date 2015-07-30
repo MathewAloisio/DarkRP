@@ -3,21 +3,21 @@
 ```
     *creates loot with the given arguments. 
 
-    *returns: true if succeeds, false if fails.
+    *returns: 'ent' if succeeds, false if fails.
 ```
 
 
 ### items.Get(id) **[SHARED]**
 
 ```
-    *returns the table ItemInfo[id].
+    *returns the table ItemList[id].
 ```
 
 
 ### items.GetAll() **[SHARED]**
 
 ```
-    *returns the table ItemInfo in it's entirety.
+    *returns the table ItemList in it's entirety.
 ```
 
 
@@ -27,6 +27,17 @@
     *returns an appropriate name for the item based on the inputed 'id' and 'quantity'.
 ```
 
+### items.GetWeight(id) **[SHARED]**
+
+```
+    *returns ItemList[id].Weight
+```
+
+### items.IsStackable(id) **[SHARED]**
+
+```
+    *returns true if the item is stackable, false if it isn't.
+```
 
 ### items.Register(ITEM) **[SHARED]**
 
@@ -34,6 +45,10 @@
     *registers a new item with the data provided in the 'ITEM' table.
     *returns nil.
 ```
+
+***NOTE:*** ITEM.Action[0] is defaulted to 'Equip' when ITEM.Type == TYPE_WEAPON.
+
+***NOTE:*** The LAST ITEM.Action is ALWAYS 'Drop' when there is no 'DoAction' override.
 
 # Example item file with all **current** parameters.#
 
@@ -48,32 +63,35 @@ ITEM.Description = "" --A description of what the item is.
 ITEM.Model = "" --The items model.
 ITEM.Weight = 0.0 --The items weight.
 ITEM.Type = TYPE_ITEM --Item type. (for easier use-with-code, maybe sorting later).
-ITEM.Class = CLASS_NONE --Class for this item. (for easier use-with-code.)
 ITEM.CanSpawn = true --Can this item be dropped?
 ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
 ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.
-
-ITEM.Args = { -- For variables that are specific to this item-type only.
-	--Example = false,
-	--Example2 = true
-}
+ITEM.Stackable = false --Can this item be stacked? (quantity greater than 1) [Optional]
 
 ITEM.Actions = {} --The actions displayed when the menu is used.
-ITEM.Actions[1] = {
+ITEM.Actions[0] = { --Overridden on TYPE_WEAPON items, however still NOT optional.
 	Name = "Use",
-	ShowOption = function() return true end,
-	DoAction = function()
+	ShowOption = function(player) return true end, --Optional
+	DoAction = function(player) --Optional on Action[0] for TYPE_WEAPON items ONLY.
 		--Code here.
 	end
 }
-ITEM.Actions[2] = {
+ITEM.Actions[1] = {--NOTE: If you don't include a 'DoAction' on Action[max] it is assumed to be 'Drop'.
 	Name = "Drop",
-	ShowOption = function() return true end,
-	DoAction = function()
+	ShowOption = function(player) return true end, --Optional
+	DoAction = function(player) --Optional on the LAST ACTION only.
 		--Code here.
 	end
 }
 
 --OPTIONAL:
+ITEM.Class = CLASS_NONE --Class for this item. (for easier use-with-code.)
+ITEM.WepClass = "" -- For easier use with weapons. Example: "weapon_pistol"
 ITEM.ClassOverride = "darkrp_item" --Entity class that is created when 'item.CreateLoot()' spawns this item.
+ITEM.DropAng = Angle(0,0,0) --Choose the angle this item spawns at when created with 'item.CreateLoot(id)'
+ITEM.OnSpawn = function(ent) end --Called after the item is spawned as loot, returns the entity created as the argument.
+ITEM.Args = { -- For variables that are specific to this item-type only.
+	--Example = false,
+	--Example2 = true
+}
 ```

@@ -1,16 +1,21 @@
 --Dependencies: "skills", "item".
+--NOTE: weapon.ItemID MUST be set when equipping a weapon.
 util.AddNetworkString("networkInventory")
 local function recalculateInvWeight(player)
 	player.InvWeight = 0.0
 	for slot=0,player:GetMaxInvSlots() do
 		if player.Inv[slot][ITEM_ID] != 0 then
-			player.InvWeight = player.InvWeight + items.Get(player.Inv[slot][ITEM_ID]).Weight
+			if items.IsStackable(player.Inv[slot][ITEM_ID]) then
+				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * items.GetWeight(player.Inv[slot][ITEM_Q])
+			else
+				player.InvWeight = player.InvWeight + items.GetWeight(player.Inv[slot][ITEM_ID])
+			end
 		end
 	end
 end
 
 local function saveInventory(player)
-	recalculateInvWeight(playerid)
+	recalculateInvWeight(player)
 	file.Write(string.format("roleplay/inventory/%s.txt", player:UniqueID()), pon.encode(player.Inv))
 end
 hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory) --Redundant but just incase.
@@ -47,6 +52,44 @@ hook.Add("ShutDown", "inventoryShutDown", function() --Redundant but just incase
 	end
 end)
 
+DarkRP.defineChatCommand("putgun", function(player, args)
+	local weapon = player:GetActiveWeapon()
+	if not weapon.ItemID then DarkRP.Notify(player, 1, 4, "You can't put this weapon into your inventory.") return "" end
+	if player.holsterTime and player.holsterTime > CurTime() then DarkRP.Notify(player, 1, 4, "You can't put this weapon away yet.") return "" end
+	player.holsterTime = CurTime() + 2
+	player:GiveInvItem(weapon.ItemID, 1, weapon:Clip1())
+	player:StripWeapon(weapon:GetClass())
+	return ""
+end)
+
+concommand.Add("rp_invaction", function(player, cmd, args)
+	if #args < 2 then return end
+	local slot = tonumber(args[1])
+	local action = tonumber(args[2])
+	local inv = player.Inv[slot]
+	if inv[ITEM_ID] ~= 0 then
+		local tbl = items.Get(inv[ITEM_ID])
+		if tbl == nil then MsgN(string.format("[ERROR] Item[%i] not found. Called by [rp_invaction].", inv[ITEM_ID])) return end
+		if tbl.ShowOption ~= nil and tbl.ShowOption(player) == false then return end --direct-concommand abuse protection.
+		if tbl.Type == TYPE_WEAPON and action == 0 then
+			if player:HasWeapon(tbl.WepClass) then DarkRP.Notify(player, 1, 4, "You already have this weapon equipped!") return end
+			local wep = player:Give(tbl.WepClass)
+			wep:SetClip1(inv[ITEM_E]))
+			player:RemoveInvItem(_, 0, slot)
+			player:SelectWeapon(tbl.WepClass)
+			wep.ItemID = tbl.ID
+			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player) end
+			return
+		end
+		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
+		if tbl.Actions[action].DoAction then
+			tbl.Actions[action].DoAction(player)
+		elseif action >= #tbl.Actions then --Drop since we're on the last Action and there is no custom 'DoAction' set, assumed drop.
+			player:DropInvItem(slot)
+		end
+	end
+end)
+
 local PLAYER = FindMetaTable("Player")
 
 function PLAYER:RecalculateMaxInvSlots()
@@ -74,31 +117,33 @@ function PLAYER:GetMaxInvWeight() --Can be mimicked clientside, no need to netwo
 	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*5) --TODO: Make the skill system.
 end
 
-function PLAYER:CanHoldItem(id)
-	if (self.InvWeight + items.Get(id).Weight) > self:GetMaxInvWeight() then return false end
+function PLAYER:CanHoldItem(id,q)
+	local q = q or 1
+	if items.IsStackable(id) then
+		if (self.InvWeight + (items.Get(id).Weight * q)) > self:GetMaxInvWeight() then return false end
+	else
+		if (self.InvWeight + items.Get(id).Weight) > self:GetMaxInvWeight() then return false end
+	end
 	return true
 end
 
 function PLAYER:GiveInvItem(id, quantity, e, ex)
-	if self:CanHoldItem(id) == false then --Item is too heavy.
+	if self:CanHoldItem(id, quantity) == false then --Item is too heavy.
 		DarkRP.notify(self, 1, 4, string.format("You're carrying too much weight to hold this %s.", items.Get(id).Name))
 		return false 
-	end
-	if self:CheckInv() == false then --No free inventory slots.
-		DarkRP.notify(self, 1, 4, string.format("You're don't have room to hold this %s.", items.Get(id).Name))
-		return false
 	end
 	for slot=0,self:GetMaxInvSlots() do
 		if self.Inv[slot][ITEM_ID] == 0 then
 			self.Inv[slot][ITEM_ID] = id
-			self.Inv[slot][ITEM_Q]] = quantity
-			self.Inv[slot][ITEM_E] = e
-			self.Inv[slot][ITEM_EX] = ex
+			self.Inv[slot][ITEM_Q]] = quantity or 1
+			self.Inv[slot][ITEM_E] = e or 0
+			self.Inv[slot][ITEM_EX] = ex or 0
 			saveInventory(self)
 			networkInventory(self)
 			return true
 		end
 	end
+	DarkRP.notify(self, 1, 4, string.format("You're don't have room to hold this %s.", items.Get(id).Name))
 	return false
 end
 
@@ -131,7 +176,7 @@ function PLAYER:RemoveInvItem(id, quantity, slot)
 		end
 	end
 	if slot == -1 return end -- Kill the function if their is no slot specified and the item wasn't found.
-	if quantity == 0 then -- Remove all items.
+	if quantity == 0 or not items.IsStackable(id) then -- Remove all items.
 		self.Inv[slot][ITEM_ID] = 0
 		self.Inv[slot][ITEM_Q]] = 0
 		self.Inv[slot][ITEM_E] = 0
@@ -197,4 +242,29 @@ function PLAYER:CheckInvItemEx(id) --Counts total amount of a specific item ID i
 	end
 	if count != 0 then return count end
 	return false
+end
+
+function PLAYER:DropInvItem(slot,force)
+	local force = force or 0
+	if self.Inv[slot][ITEM_ID] == 0 then return false end
+	if (pl.nextItemDrop and pl.nextItemDrop > CurTime()) and force == 0 then DarkRP.Notify(self, 1, 4, "Wait a moment before dropping another item.") return false end
+	pl.nextItemDrop = CurTime() + 2
+	local tbl = {
+		id = self.Inv[slot][ITEM_ID],
+		q = self.Inv[slot][ITEM_Q],
+		e = self.Inv[slot][ITEM_E],
+		ex = self.Inv[slot][ITEM_EX]
+	}
+	self.Inv[slot][ITEM_ID] = 0
+	self.Inv[slot][ITEM_Q]] = 0
+	self.Inv[slot][ITEM_E] = 0
+	self.Inv[slot][ITEM_EX] = 0
+	fixInventory(self)
+	saveInventory(self)
+	local tr = pl:GetEyeTrace(100)
+	local ent = items.CreateLoot(tbl.id, tbl.q, tbl.e, tbl.ex, tr.HitPos+1, items.Get(tbl.id).DropAng or nil)
+	if ent ~= false and IsValid(ent) then
+		ent:SetPos(tr.HitPos + (tr.HitNormal*(ent:OBBMaxs()*2)))
+	end
+	return true
 end

@@ -15,6 +15,14 @@ function items.GetName(id, quantity)
 	return ItemList[id].Name
 end
 
+function items.GetWeight(id)
+	return ItemList[id].Weight or 0.0
+end
+
+function items.IsStackable(id)
+	return ItemList[id].Stackable or false
+end
+
 function items.Register(tbl)
 	if !tbl or tbl.ID == nil then MsgN("[ERROR] no 'tbl.ID' sent to 'items.Register'.") return end
 	ItemList[tbl.ID] = tbl
