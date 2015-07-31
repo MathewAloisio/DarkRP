@@ -72,26 +72,14 @@ ITEM.Actions = {} --The actions displayed when the menu is used.
 ITEM.Actions[0] = { --Overridden on TYPE_WEAPON items, however still NOT optional.
 	Name = "Use",
 	ShowOption = function(player) return true end, --Optional
-	DoAction = function(player) --Optional on Action[0] for TYPE_WEAPON items ONLY.
+	DoAction = function(player,slot) --Optional on Action[0] for TYPE_WEAPON items ONLY.
 		--Code here.
 	end
 }
 ITEM.Actions[1] = {--NOTE: If you don't include a 'DoAction' on Action[max] it is assumed to be 'Drop'.
 	Name = "Drop",
 	ShowOption = function(player) return true end, --Optional
-	DoAction = function(player) --Optional on the LAST ACTION only.
+	DoAction = function(player,slot) --Optional on the LAST ACTION only.
 		--Code here.
 	end
 }
-
---OPTIONAL:
-ITEM.Class = CLASS_NONE --Class for this item. (for easier use-with-code.)
-ITEM.WepClass = "" -- For easier use with weapons. Example: "weapon_pistol"
-ITEM.ClassOverride = "darkrp_item" --Entity class that is created when 'item.CreateLoot()' spawns this item.
-ITEM.DropAng = Angle(0,0,0) --Choose the angle this item spawns at when created with 'item.CreateLoot(id)'
-ITEM.OnSpawn = function(ent) end --Called after the item is spawned as loot, returns the entity created as the argument.
-ITEM.Args = { -- For variables that are specific to this item-type only.
-	--Example = false,
-	--Example2 = true
-}
-```
