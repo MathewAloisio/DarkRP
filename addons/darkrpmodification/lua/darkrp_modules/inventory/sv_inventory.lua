@@ -78,12 +78,12 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 			player:RemoveInvItem(_, 0, slot)
 			player:SelectWeapon(tbl.WepClass)
 			wep.ItemID = tbl.ID
-			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player) end
+			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player,slot) end
 			return
 		end
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
-			tbl.Actions[action].DoAction(player)
+			tbl.Actions[action].DoAction(player,slot)
 		elseif action >= #tbl.Actions then --Drop since we're on the last Action and there is no custom 'DoAction' set, assumed drop.
 			player:DropInvItem(slot)
 		end
