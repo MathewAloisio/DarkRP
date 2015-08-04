@@ -23,6 +23,7 @@ CLASS_MELEE = 4
 -- Inventory settings.
 MAX_INV_SLOTS = 20
 MAX_INV_WEIGHT = 100
+INV_SLOT_LIMIT = 50
 
 _G.defines = _G.defines or {}
 

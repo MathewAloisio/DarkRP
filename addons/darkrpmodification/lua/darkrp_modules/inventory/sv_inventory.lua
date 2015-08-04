@@ -1,5 +1,6 @@
 --Dependencies: "skills", "item".
 --NOTE: weapon.ItemID MUST be set when equipping a weapon.
+util.AddNetworkString("openInventoryMenu")
 util.AddNetworkString("networkInventory")
 local function recalculateInvWeight(player)
 	player.InvWeight = 0.0
@@ -30,11 +31,14 @@ end
 
 hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 	player.Inv = {}
+	for slot=0,INV_SLOT_LIMIT do
+		player.Inv[slot] = {}
+	end
+
 	if file.Exists(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA") then
 		player.Inv = pon.decode(file.Read(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA"))
 		recalculateInvWeight(player)
 	else 
-		player.Inv[slot] = {}
 		for slot=0,player:GetMaxInvSlots() do
 			player.Inv[slot][ITEM_ID] = 0
 			player.Inv[slot][ITEM_Q] = 0
@@ -78,12 +82,12 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 			player:RemoveInvItem(_, 0, slot)
 			player:SelectWeapon(tbl.WepClass)
 			wep.ItemID = tbl.ID
-			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player,slot) end
+			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player, slot) end
 			return
 		end
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
-			tbl.Actions[action].DoAction(player,slot)
+			tbl.Actions[action].DoAction(player, slot)
 		elseif action >= #tbl.Actions then --Drop since we're on the last Action and there is no custom 'DoAction' set, assumed drop.
 			player:DropInvItem(slot)
 		end
@@ -97,11 +101,12 @@ function PLAYER:RecalculateMaxInvSlots()
 	if self:IsDonate(1) then slots = slots + 5 end
 	if self:IsDonate(2) then slots = slots + 5 end
 	if self:IsDonate(3) then slots = slots + 5 end
-	ply.MaxInvSlots = slots
+	if slots > INV_SLOT_LIMIT then slots = INV_SLOT_LIMIT end
+	self.MaxInvSlots = slots
 end
 
 function PLAYER:GetMaxInvSlots()
-	return ply.InvMaxSlots or MAX_INV_SLOTS
+	return self.InvMaxSlots or MAX_INV_SLOTS
 end
 
 function PLAYER:CheckInv() --Check if the inventory is full
@@ -268,3 +273,11 @@ function PLAYER:DropInvItem(slot,force)
 	end
 	return true
 end
+
+//Binds ShowTeam [F2] key to the inventory change how you want this is just how i was testing the menu.
+function ShowTeam(ply)
+	net.Start("openInventoryMenu")
+	net.Send(ply)
+	networkInventory(ply)
+end
+hook.Add("ShowTeam", "Inventory::OpenMenu", ShowTeam)

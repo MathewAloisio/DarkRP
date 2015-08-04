@@ -42,7 +42,7 @@ end)
 local PLAYER = FindMetaTable("Player")
 
 function PLAYER:DonateDaysLeft() -- returns the days left in a players donor subscription.
-	return (30 - defines.SecondsToDays(self.DonateExpires)) or 0
+	return (30 - defines.SecondsToDays(self.DonateExpire)) or 0
 end
 
 function PLAYER:SetDonate(rank)
