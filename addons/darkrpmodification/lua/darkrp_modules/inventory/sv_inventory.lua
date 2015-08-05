@@ -278,6 +278,5 @@ end
 function ShowTeam(ply)
 	net.Start("openInventoryMenu")
 	net.Send(ply)
-	networkInventory(ply)
 end
 hook.Add("ShowTeam", "Inventory::OpenMenu", ShowTeam)

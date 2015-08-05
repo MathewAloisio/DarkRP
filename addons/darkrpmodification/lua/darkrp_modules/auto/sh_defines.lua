@@ -43,3 +43,15 @@ function defines.TranslateDonate(rank)
 	if rank == 3 then return "Gold" end
 	return "None"
 end
+
+function defines.ScreenScale(val,scalefactor)
+	if not scaleFactor then
+		local adjX = ScrW() / 1024.0
+		if (adjX * ScrH()) > ScrH() then
+			scaleFactor = ScrH() / 768.0
+		else
+			scaleFactor = adjX
+		end
+	end
+	return val * scaleFactor
+end

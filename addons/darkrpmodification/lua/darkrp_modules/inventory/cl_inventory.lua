@@ -68,38 +68,32 @@ function inventory.CheckInvItemEx(id) --Counts total amount of a specific item I
 end
 
 --TODO Actual inventory UI below.
-local Menu = nil
-local MenuList = nil
-local IsOpen = false
-local sc_w, sc_h = 1280, 720
-local w, h = ScrW(), ScrH()
-local wx, wy = w / sc_w, h / sc_h
+local Menu = Menu or nil
+local MenuList = MenuList or nil
+local IsOpen = IsOpen or false
 
-function inventory.MakeItemSlot(id, slot)
-	if (id == 0 or id == nil) then
-		if (IsValid(MenuList)) then 
-			local panel = vgui.Create("DModelPanel", MenuList)
-			panel:SetSize(80 * wx, 80 * wy)
-			panel.Slot = slot
-			panel.Paint = function()
-				draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(0, 0, 0, 255))
-			end		
-		end
+local function makeItemSlot(id, slot)
+	if not IsValid(MenuList) then return end
+	if id == 0 or id == nil then
+		local panel = vgui.Create("DModelPanel", MenuList)
+		panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
+		panel.Slot = slot
+		panel.Paint = function()
+			draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(0, 0, 0, 255))
+		end		
 	else
 		local tbl = items.Get(id)
-		if (IsValid(MenuList)) then
-			local panel = vgui.Create("DModelPanel", MenuList)
-			panel:SetModel(tbl.Model)
-			panel:SetTooltip(index)
-			panel:SetSize(80 * wx, 80 * wy)
-			panel.ItemID = id
-			panel.Slot = slot
-			panel:SetCamPos(tbl.CamPos)
-			panel:SetLookAt(tbl.CamPos)
-			if items.IsStackable(id) then
-				panel.PaintOver = function() 
-					draw.SimpleText(Inv[slot][ITEM_Q], "ScorboardSubtitle", 60 * wx, 60 * wy, Color(255, 255, 255, 255), 2, 4) 
-				end
+		local panel = vgui.Create("DModelPanel", MenuList)
+		panel:SetModel(tbl.Model)
+		panel:SetTooltip(index)
+		panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
+		panel.ItemID = id
+		panel.Slot = slot
+		panel:SetCamPos(tbl.CamPos)
+		panel:SetLookAt(tbl.LookAt)
+		if items.IsStackable(id) then
+			panel.PaintOver = function() 
+				draw.SimpleText(Inv[slot][ITEM_Q], "ScorboardSubtitle", defines.ScreenScale(60), defines.ScreenScale(60), Color(255, 255, 255, 255), 2, 4) 
 			end
 		end
 
@@ -110,48 +104,44 @@ function inventory.MakeItemSlot(id, slot)
 		end
 	end
 	
-	if (IsValid(MenuList)) then
-		MenuList:AddItem(panel)
-	end
+	MenuList:AddItem(panel)
 end
 
-function inventory.Menu()
+local function createInventory()
 	Menu = vgui.Create("DPanel")
-	Menu:SetPos(450 * wx, ScrH() * wy)
-	Menu:SetSize(400 * wx, 300 * wy)
+	Menu:SetPos(ScrW(), ScrH()-400)
+	Menu:SetSize(defines.ScreenScale(520), defines.ScreenScale(280))
 	Menu:SetVisible(true)
 	Menu.Paint = function()
 		draw.RoundedBox(6, 0, 0, Menu:GetWide(), Menu:GetTall(), Color(34, 49, 63, 255))
-		draw.RoundedBoxEx(6, 0, 0, Menu:GetWide(), 50 * wy, Color(52, 73, 94, 255), true, true, false, false)
+		draw.RoundedBoxEx(6, 0, 0, Menu:GetWide(), defines.ScreenScale(50), Color(52, 73, 94, 255), true, true, false, false)
 	end
+	
 
 	MenuList = vgui.Create("DPanelList", Menu)
-	MenuList:StretchToParent(5 * wx, 55 * wy, 5 * wx, 5 * wy)
+	MenuList:StretchToParent(defines.ScreenScale(5), defines.ScreenScale(55), defines.ScreenScale(5), defines.ScreenScale(5))
 	MenuList:EnableHorizontal(true)
 	MenuList:EnableVerticalScrollbar(true)
 	MenuList.Paint = function()
 		draw.RoundedBox(6, 0, 0, Menu:GetWide() - 100, Menu:GetTall() - 100, Color(255, 255, 255, 255))
 	end
-
-	for slot=0, MaxInvSlots do
-		inventory.MakeItemSlot(Inv[slot][ITEM_ID], slot)
+	
+	for slot=0,MaxInvSlots do
+		makeItemSlot(Inv[slot][ITEM_ID], slot)
 	end
 
 	gui.EnableScreenClicker(true)
 end
 
 net.Receive("openInventoryMenu", function(len, ply)
-	if (!IsValid(Menu)) then
-		inventory.Menu()
-		Menu:MoveTo(450 * wx, ScrH() - 250 * wy, 0.5, 0)
+	if not IsValid(Menu) then createInventory() end
+	if IsOpen == false then
+		Menu:MoveTo(ScrW()-500,ScrH()-400,0.2,0,1)
 		gui.EnableScreenClicker(true)
-		IsOpen = !IsOpen
-	elseif(IsValid(Menu) && IsOpen == true) then
-		Menu:MoveTo(450 * wx, ScrH() + 250 * wy, 0.5, 0)
-		IsOpen = !IsOpen
+		IsOpen = true
+	elseif IsOpen == true then
+		Menu:MoveTo(ScrW(),ScrH()-400,0.2,0,1)
+		IsOpen = false
 		gui.EnableScreenClicker(false)
-		repeat
-			if (Menu:GetPos().Y == 250) then Menu:Remove() end
-		until !IsValid(Menu)
 	end
 end)
