@@ -17,7 +17,7 @@ ITEM.Actions[0] = {
 ITEM.Actions[1] = {
     Name = "Drop",
     ShowOption = function(player) return true end,
-    DoAction = function(player)
+    DoAction = function(player, slot)
         --Code here.
     end
 }

@@ -83,3 +83,15 @@ ITEM.Actions[1] = {--NOTE: If you don't include a 'DoAction' on Action[max] it i
 		--Code here.
 	end
 }
+
+--OPTIONAL:
+ITEM.Class = CLASS_NONE --Class for this item. (for easier use-with-code.)
+ITEM.WepClass = "" -- For easier use with weapons. Example: "weapon_pistol"
+ITEM.ClassOverride = "darkrp_item" --Entity class that is created when 'item.CreateLoot()' spawns this item.
+ITEM.DropAng = Angle(0,0,0) --Choose the angle this item spawns at when created with 'item.CreateLoot(id)'
+ITEM.OnSpawn = function(ent) end --Called after the item is spawned as loot, returns the entity created as the argument.
+ITEM.Args = { -- For variables that are specific to this item-type only.
+	--Example = false,
+	--Example2 = true
+}
+```
