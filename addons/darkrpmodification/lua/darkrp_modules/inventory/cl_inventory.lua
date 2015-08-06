@@ -91,9 +91,13 @@ local function makeItemSlot(id, slot)
 		panel.Slot = slot
 		panel:SetCamPos(tbl.CamPos)
 		panel:SetLookAt(tbl.LookAt)
-		if items.IsStackable(id) then
-			panel.PaintOver = function() 
-				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", panel:GetWide(), panel:GetTall()-0.5, Color(255, 255, 255, 255), 2, 4) 
+		panel.PaintOver = function() 
+			if items.IsStackable(id) then
+				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", panel:GetWide()-1.5, panel:GetTall()-1.5, Color(255, 255, 255, 255), 2, 4) 
+			end
+			if panel:IsHovered() then
+				surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
+				surface.DrawOutlinedRect( 0, 0, panel:GetWide(), panel:GetTall() )
 			end
 		end
 
