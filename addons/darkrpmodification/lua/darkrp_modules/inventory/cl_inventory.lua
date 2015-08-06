@@ -1,7 +1,7 @@
 _G.inventory = _G.inventory or {}
 
 local InvWeight = InvWeight or 0.0
-local MaxInvSlots = MaxInvSlots or MAX_INV_SLOTS
+local MaxInvWeight = MaxInvWeight or MAX_INV_WEIGHT
 local Inv = Inv or {}
 
 
@@ -14,11 +14,7 @@ function inventory.Get(slot)
 end
 
 function inventory.GetMaxInvWeight()
-	return MAX_INV_WEIGHT + (Levels["Strength"]*5)
-end
-
-function inventory.GetMaxInvSlots()
-	return MaxInvSlots
+	return MaxInvWeight or MAX_INV_WEIGHT
 end
 
 function inventory.CanHoldItem(id)
@@ -27,7 +23,7 @@ function inventory.CanHoldItem(id)
 end
 
 function inventory.CheckInv() --Check if the inventory is full
-	for slot=0,MaxInvSlots do
+	for slot=0,MAX_INV_SLOTS do
 		if Inv[slot][ITEM_ID] == 0 then
 			return true
 		end
@@ -36,7 +32,7 @@ function inventory.CheckInv() --Check if the inventory is full
 end
 
 function inventory.CheckInvItem(id) --NOTE: not for use with quantity-based items.
-	for slot=0,MaxInvSlots do
+	for slot=0,MAX_INV_SLOTS do
 		if Inv[slot][ITEM_ID] == id then
 			return true
 		end
@@ -45,7 +41,7 @@ function inventory.CheckInvItem(id) --NOTE: not for use with quantity-based item
 end
 
 function inventory.HasInvItem(id, quantity) -- Checks if the player has a stack of 'items.Get(id)' with a quantity equal to or greater than 'quantity'. NOTE: for quantity-based items ONLY. IMPORTANT: returns -1 instead of 'false'.
-	for slot=0,MaxInvSlots do
+	for slot=0,MAX_INV_SLOTS do
 		if Inv[slot][ITEM_ID] == id then
 			if Inv[slot][ITEM_Q] >= quantity then
 				return slot
@@ -57,7 +53,7 @@ end
 
 function inventory.CheckInvItemEx(id) --Counts total amount of a specific item ID in your inventory, all stacks taken into consideration.
 	local count = 0
-	for slot=0,MaxInvSlots do
+	for slot=0,MAX_INV_SLOTS do
 		if Inv[slot][ITEM_ID] == id then
 			if Inv[slot][ITEM_Q] == 0 then
 				count = count + 1
@@ -97,7 +93,7 @@ local function makeItemSlot(id, slot)
 		panel:SetLookAt(tbl.LookAt)
 		if items.IsStackable(id) then
 			panel.PaintOver = function() 
-				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", defines.ScreenScale(60), defines.ScreenScale(60), Color(255, 255, 255, 255), 2, 4) 
+				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", panel:GetWide(), panel:GetTall()-0.5, Color(255, 255, 255, 255), 2, 4) 
 			end
 		end
 
@@ -108,7 +104,7 @@ local function makeItemSlot(id, slot)
 				menu:AddOption(v.Name, function()
 					RunConsoleCommand("rp_invaction", panel.Slot, i) 
 					MenuList:Clear()
-					for slot=0,MaxInvSlots do
+					for slot=0,MAX_INV_SLOTS do
 						makeItemSlot(Inv[slot][ITEM_ID], slot)
 					end
 				end)
@@ -122,33 +118,35 @@ end
 
 local function createInventory()
 	Menu = vgui.Create("DPanel")
-	Menu:SetPos(ScrW(), ScrH()-400)
-	Menu:SetSize(defines.ScreenScale(520), defines.ScreenScale(280))
+	Menu:SetPos(ScrW(), ScrH()-500)
+	Menu:SetSize(defines.ScreenScale(480), defines.ScreenScale(240))
 	Menu:SetSkin("DarkRP")
 	Menu:SetVisible(true)
 	Menu.Paint = function()
-		draw.RoundedBox(6, 0, 0, Menu:GetWide(), Menu:GetTall(), Color(34, 49, 63, 255))
-		draw.RoundedBoxEx(6, 0, 0, Menu:GetWide(), defines.ScreenScale(50), Color(52, 73, 94, 255), true, true, false, false)
+		draw.DrawText("Player Inventory", "TargetID", surface.GetTextSize("Player Inventory")/1.75, 0.5, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER)
+		draw.RoundedBox(8, 0, 0, Menu:GetWide(), Menu:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), GetConVarNumber("background4")))
+
+		surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
+		surface.DrawLine(0, 20, Menu:GetWide(), 20)
 	end
-	
 
 	MenuList = vgui.Create("DPanelList", Menu)
-	MenuList:StretchToParent(defines.ScreenScale(5), defines.ScreenScale(55), defines.ScreenScale(5), defines.ScreenScale(5))
+	MenuList:StretchToParent(defines.ScreenScale(5), defines.ScreenScale(30), defines.ScreenScale(5), defines.ScreenScale(5))
 	MenuList:EnableHorizontal(true)
 	MenuList:EnableVerticalScrollbar(true)
 	MenuList.Paint = function()
-		draw.RoundedBox(6, 0, 0, Menu:GetWide() - 100, Menu:GetTall() - 100, Color(255, 255, 255, 255))
+		draw.RoundedBox( 4, 0, 0, Menu:GetWide() - 50, Menu:GetTall() - 50, Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
 	end
 end
 
 net.Receive("networkInventory", function(len)
 	InvWeight = net.ReadFloat()
-	MaxInvSlots = net.ReadDouble()
+	MaxInvWeight = net.ReadDouble()
 	Inv = net.ReadTable()
 
 	if IsValid(MenuList) then
 		MenuList:Clear() --rebuild item icons.
-		for slot=0,MaxInvSlots do
+		for slot=0,MAX_INV_SLOTS do
 			makeItemSlot(Inv[slot][ITEM_ID], slot)
 		end
 	end
@@ -156,11 +154,11 @@ end)
 
 net.Receive("openInventoryMenu", function(len, ply)
 	if IsOpen == false then
-		Menu:MoveTo(ScrW()-500,ScrH()-400,0.2,0,1)
+		Menu:MoveTo(ScrW()-defines.ScreenScale(453),ScrH()-500,0.2,0,1)
 		gui.EnableScreenClicker(true)
 		IsOpen = true
 	elseif IsOpen == true then
-		Menu:MoveTo(ScrW(),ScrH()-400,0.2,0,1)
+		Menu:MoveTo(ScrW(),ScrH()-500,0.2,0,1)
 		IsOpen = false
 		gui.EnableScreenClicker(false)
 	end

@@ -11,14 +11,6 @@
     *returns true on success, false on failure.
 ```
 
-
-* PLAYER:GetMaxInvSlots() **[SHARED]**
-```
-
-
-    * returns the total amount of available inventory slots for the specified player.
-
-```
 * PLAYER:GetMaxInvWeight() **[SHARED]**
 ```
 
@@ -104,17 +96,16 @@
 ## Serverside Player Variables: ##
 * **player.Inv** *[type: table]*
 * **player.InvWeight** *[type: float]*
-* **player.MaxInvSlots** *[type: double]* *[usage: player:GetMaxInvSlots()]*
 
 ## Clientside Player Variables: ##
 * **Inv** *[type: table]* *[local to cl_inventory.lua]*
 * **InvWeight** *[type: float]* *[local to cl_inventory.lua]*
-* **MaxInvSlots** *[type: double]* *[usage: inventory.GetMaxInvSlots()]*
+* **MaxInvWeight** *[type: double]* *[usage: inventory.GetMaxInvWeight()]*
 
 ## Clientside-only functions: ##
 * **inventory.Get(slot)** *[returns: 'Inv[slot]' table]*
 * **inventory.GetAll()** *[returns: 'Inv' table]*
 
 ## Configurable Variables: ##
-* **MAX_INV_SLOTS** *[default: 20]*
+* **MAX_INV_SLOTS** *[default: 49]*
 * **MAX_INV_WEIGHT** *[default: 100]*

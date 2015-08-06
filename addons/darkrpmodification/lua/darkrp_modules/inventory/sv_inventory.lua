@@ -4,7 +4,7 @@ util.AddNetworkString("openInventoryMenu")
 util.AddNetworkString("networkInventory")
 local function recalculateInvWeight(player)
 	player.InvWeight = 0.0
-	for slot=0,player:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if player.Inv[slot][ITEM_ID] != 0 then
 			if items.IsStackable(player.Inv[slot][ITEM_ID]) then
 				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * player.Inv[slot][ITEM_Q])
@@ -24,14 +24,14 @@ hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory) --Redundant b
 local function networkInventory(player)
 	net.Start("networkInventory")
 		net.WriteFloat(player.InvWeight)
-		net.WriteDouble(player:GetMaxInvSlots())
+		net.WriteDouble(player:GetMaxInvWeight())
 		net.WriteTable(player.Inv)
 	net.Send(player)
 end
 
 hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 	player.Inv = {}
-	for slot=0,INV_SLOT_LIMIT do --Fully initialize our table.
+	for slot=0,MAX_INV_SLOTS do --Fully initialize our table.
 		player.Inv[slot] = {}
 		player.Inv[slot][ITEM_ID] = 0
 		player.Inv[slot][ITEM_Q] = 0
@@ -43,7 +43,7 @@ hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 		player.Inv = pon.decode(file.Read(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA"))
 		recalculateInvWeight(player)
 	else 
-		for slot=0,player:GetMaxInvSlots() do
+		for slot=0,MAX_INV_SLOTS do
 			player.Inv[slot][ITEM_ID] = 0
 			player.Inv[slot][ITEM_Q] = 0
 			player.Inv[slot][ITEM_E] = 0
@@ -80,7 +80,6 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 		if tbl == nil then MsgN(string.format("[ERROR] Item[%i] not found. Called by [rp_invaction].", inv[ITEM_ID])) return end
 		if (tbl.ShowOption ~= nil and tbl.ShowOption(player) == false) then return end --direct-concommand abuse protection. (this means we need an equivalent ShowOption serverside and clientside.)
 		if action == 0 then
-			DarkRP.notify(player, 1, 4, "Type: "..tostring(tbl.Type).."!")
 			if tbl.Type == ITYPE_WEAPON then
 				if player:HasWeapon(tbl.WepClass) then DarkRP.notify(player, 1, 4, "You already have this weapon equipped!") return end
 				local wep = player:Give(tbl.WepClass)
@@ -112,21 +111,8 @@ end)
 
 local PLAYER = FindMetaTable("Player")
 
-function PLAYER:RecalculateMaxInvSlots()
-	local slots = 0
-	if self:IsDonate(1) then slots = slots + 5 end
-	if self:IsDonate(2) then slots = slots + 5 end
-	if self:IsDonate(3) then slots = slots + 5 end
-	if slots > INV_SLOT_LIMIT then slots = INV_SLOT_LIMIT end
-	self.MaxInvSlots = slots
-end
-
-function PLAYER:GetMaxInvSlots()
-	return self.InvMaxSlots or MAX_INV_SLOTS
-end
-
 function PLAYER:CheckInv() --Check if the inventory is full
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if self.Inv[slot][ITEM_ID] == 0 then
 			return true
 		end
@@ -153,7 +139,7 @@ function PLAYER:GiveInvItem(id, quantity, e, ex)
 		DarkRP.notify(self, 1, 4, string.format("You're carrying too much weight to hold this %s.", items.Get(id).Name))
 		return false 
 	end
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if self.Inv[slot][ITEM_ID] == 0 then
 			self.Inv[slot][ITEM_ID] = id
 			self.Inv[slot][ITEM_Q] = quantity or 1
@@ -169,7 +155,7 @@ function PLAYER:GiveInvItem(id, quantity, e, ex)
 end
 
 local function fixInventory(self) -- Slides everything down 1 inv-slot when an item is removed.
-	local max_slots = self:GetMaxInvSlots() --Store it just incase it changes in the fraction of a second this takes to run.
+	local max_slots = MAX_INV_SLOTS --Store it just incase it changes in the fraction of a second this takes to run.
 	for slot=0,max_slots do
 		if self.Inv[slot][ITEM_ID] == 0 and slot != max_slots then
 			local new = slot+1
@@ -189,7 +175,7 @@ function PLAYER:RemoveInvItem(id, quantity, slot)
 	local quantity = quantity or 0
 	local slot = slot or -1
 	if slot == -1 then
-		for i=0,self:GetMaxInvSlots() do
+		for i=0,MAX_INV_SLOTS do
 			if self.Inv[slot][ITEM_ID] == id then
 				slot = i
 				break
@@ -217,7 +203,7 @@ function PLAYER:RemoveInvItem(id, quantity, slot)
 end
 
 function PLAYER:RemoveAllItem(id) -- Removes all occurances of an item with the ID 'id' in your inventory.
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 			if self.Inv[slot][ITEM_ID] == id then
 			self.Inv[slot][ITEM_ID] = 0
 			self.Inv[slot][ITEM_Q] = 0
@@ -231,7 +217,7 @@ function PLAYER:RemoveAllItem(id) -- Removes all occurances of an item with the 
 end
 
 function PLAYER:CheckInvItem(id) --NOTE: not for use with quantity-based items.
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if self.Inv[slot][ITEM_ID] == id then
 			return true
 		end
@@ -240,7 +226,7 @@ function PLAYER:CheckInvItem(id) --NOTE: not for use with quantity-based items.
 end
 
 function PLAYER:HasInvItem(id, quantity) -- Checks if the player has a stack of 'items.Get(id)' with a quantity equal to or greater than 'quantity'. NOTE: for quantity-based items ONLY. IMPORTANT: returns -1 instead of 'false'.
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if self.Inv[slot][ITEM_ID] == id then
 			if self.Inv[slot][ITEM_Q] >= quantity then
 				return slot
@@ -252,7 +238,7 @@ end
 
 function PLAYER:CheckInvItemEx(id) --Counts total amount of a specific item ID in your inventory, all stacks taken into consideration.
 	local count = 0
-	for slot=0,self:GetMaxInvSlots() do
+	for slot=0,MAX_INV_SLOTS do
 		if self.Inv[slot][ITEM_ID] == id then
 			if self.Inv[slot][ITEM_Q] == 0 then
 				count = count + 1

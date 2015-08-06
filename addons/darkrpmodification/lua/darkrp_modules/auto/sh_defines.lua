@@ -21,9 +21,8 @@ ICLASS_SECONDARY = 3
 ICLASS_MELEE = 4
 
 -- Inventory settings.
-MAX_INV_SLOTS = 20
+MAX_INV_SLOTS = 49 --Limit = MAX_INV_SLOTS + 1 because we use '0' in our loops.
 MAX_INV_WEIGHT = 100
-INV_SLOT_LIMIT = 50
 
 _G.defines = _G.defines or {}
 
@@ -44,7 +43,7 @@ function defines.TranslateDonate(rank)
 	return "None"
 end
 
-function defines.ScreenScale(val,scalefactor)
+function defines.ScreenScale(val,scaleFactor)
 	if not scaleFactor then
 		local adjX = ScrW() / 1024.0
 		if (adjX * ScrH()) > ScrH() then
@@ -58,7 +57,7 @@ end
 
 local PLAYER = FindMetaTable("Player")
 
-local developers = {"STEAM_0:1:20252092"}
+local developers = {"STEAM_0:1:20252092","STEAM_0:0:33368563"}
 function PLAYER:IsDev()
 	if table.HasValue(developers, self:SteamID()) then return true end
 	return false
