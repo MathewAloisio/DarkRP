@@ -111,6 +111,10 @@
 * **InvWeight** *[type: float]* *[local to cl_inventory.lua]*
 * **MaxInvSlots** *[type: double]* *[usage: inventory.GetMaxInvSlots()]*
 
+## Clientside-only functions: ##
+* **inventory.Get(slot)** *[returns: 'Inv[slot]' table]*
+* **inventory.GetAll()** *[returns: 'Inv' table]*
+
 ## Configurable Variables: ##
 * **MAX_INV_SLOTS** *[default: 20]*
 * **MAX_INV_WEIGHT** *[default: 100]*

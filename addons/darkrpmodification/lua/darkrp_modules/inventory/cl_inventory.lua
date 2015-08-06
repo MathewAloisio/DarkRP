@@ -3,12 +3,15 @@ _G.inventory = _G.inventory or {}
 local InvWeight = InvWeight or 0.0
 local MaxInvSlots = MaxInvSlots or MAX_INV_SLOTS
 local Inv = Inv or {}
-net.Receive("networkInventory", function(len)
-	InvWeight = net.ReadFloat()
-	MaxInvSlots = net.ReadDouble()
-	Inv = net.ReadTable()
-end)
 
+
+function inventory.GetAll()
+	return Inv
+end
+
+function inventory.Get(slot)
+	return Inv[slot]
+end
 
 function inventory.GetMaxInvWeight()
 	return MAX_INV_WEIGHT + (Levels["Strength"]*5)
@@ -74,16 +77,17 @@ local IsOpen = IsOpen or false
 
 local function makeItemSlot(id, slot)
 	if not IsValid(MenuList) then return end
-	if id == 0 or id == nil then
-		local panel = vgui.Create("DModelPanel", MenuList)
+	local panel
+	if id == nil or id == 0 then
+		panel = vgui.Create("DModelPanel", MenuList)
 		panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
 		panel.Slot = slot
-		panel.Paint = function()
-			draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(0, 0, 0, 255))
-		end		
+		--panel.Paint = function()
+		--	draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(0, 0, 0, 255))
+		--end		
 	else
 		local tbl = items.Get(id)
-		local panel = vgui.Create("DModelPanel", MenuList)
+		panel = vgui.Create("DModelPanel", MenuList)
 		panel:SetModel(tbl.Model)
 		panel:SetTooltip(index)
 		panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
@@ -93,13 +97,22 @@ local function makeItemSlot(id, slot)
 		panel:SetLookAt(tbl.LookAt)
 		if items.IsStackable(id) then
 			panel.PaintOver = function() 
-				draw.SimpleText(Inv[slot][ITEM_Q], "ScorboardSubtitle", defines.ScreenScale(60), defines.ScreenScale(60), Color(255, 255, 255, 255), 2, 4) 
+				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", defines.ScreenScale(60), defines.ScreenScale(60), Color(255, 255, 255, 255), 2, 4) 
 			end
 		end
 
 		panel.OnMousePressed = function()
 			local menu = DermaMenu()
-			--you do this part
+			for i,v in pairs(tbl.Actions) do
+				if (v.ShowOption ~= nil and v.ShowOption() == false) then continue end
+				menu:AddOption(v.Name, function()
+					RunConsoleCommand("rp_invaction", panel.Slot, i) 
+					MenuList:Clear()
+					for slot=0,MaxInvSlots do
+						makeItemSlot(Inv[slot][ITEM_ID], slot)
+					end
+				end)
+			end
 			menu:Open()
 		end
 	end
@@ -111,6 +124,7 @@ local function createInventory()
 	Menu = vgui.Create("DPanel")
 	Menu:SetPos(ScrW(), ScrH()-400)
 	Menu:SetSize(defines.ScreenScale(520), defines.ScreenScale(280))
+	Menu:SetSkin("DarkRP")
 	Menu:SetVisible(true)
 	Menu.Paint = function()
 		draw.RoundedBox(6, 0, 0, Menu:GetWide(), Menu:GetTall(), Color(34, 49, 63, 255))
@@ -125,16 +139,22 @@ local function createInventory()
 	MenuList.Paint = function()
 		draw.RoundedBox(6, 0, 0, Menu:GetWide() - 100, Menu:GetTall() - 100, Color(255, 255, 255, 255))
 	end
-	
-	for slot=0,MaxInvSlots do
-		makeItemSlot(Inv[slot][ITEM_ID], slot)
-	end
-
-	gui.EnableScreenClicker(true)
 end
 
+net.Receive("networkInventory", function(len)
+	InvWeight = net.ReadFloat()
+	MaxInvSlots = net.ReadDouble()
+	Inv = net.ReadTable()
+
+	if IsValid(MenuList) then
+		MenuList:Clear() --rebuild item icons.
+		for slot=0,MaxInvSlots do
+			makeItemSlot(Inv[slot][ITEM_ID], slot)
+		end
+	end
+end)
+
 net.Receive("openInventoryMenu", function(len, ply)
-	if not IsValid(Menu) then createInventory() end
 	if IsOpen == false then
 		Menu:MoveTo(ScrW()-500,ScrH()-400,0.2,0,1)
 		gui.EnableScreenClicker(true)
@@ -143,5 +163,11 @@ net.Receive("openInventoryMenu", function(len, ply)
 		Menu:MoveTo(ScrW(),ScrH()-400,0.2,0,1)
 		IsOpen = false
 		gui.EnableScreenClicker(false)
+	end
+end)
+
+hook.Add("Initialize", "buildInventory", function()
+	if not IsValid(Menu) then
+		createInventory()
 	end
 end)

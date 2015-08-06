@@ -27,3 +27,12 @@ function items.Register(tbl)
 	if !tbl or tbl.ID == nil then MsgN("[ERROR] no 'tbl.ID' sent to 'items.Register'.") return end
 	ItemList[tbl.ID] = tbl
 end
+
+local files = file.Find("darkrp_modules/items/items/*.lua", "LUA")
+for _,v in pairs(files) do
+	if SERVER then
+		AddCSLuaFile(string.format("darkrp_modules/items/items/%s", v))
+	end
+	include(string.format("darkrp_modules/items/items/%s", v))
+	MsgN(string.format("Item loaded: %s", v))
+end

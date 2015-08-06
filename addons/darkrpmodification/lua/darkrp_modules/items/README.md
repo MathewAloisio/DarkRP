@@ -46,7 +46,7 @@
     *returns nil.
 ```
 
-***NOTE:*** ITEM.Action[0] is defaulted to 'Equip' when ITEM.Type == TYPE_WEAPON.
+***NOTE:*** ITEM.Action[0] is defaulted to 'Equip' when ITEM.Type == ITYPE_WEAPON.
 
 ***NOTE:*** The LAST ITEM.Action is ALWAYS 'Drop' when there is no 'DoAction' override.
 
@@ -62,17 +62,17 @@ ITEM.Plural = ITEM.Name or "" --The name of the item 'items.GetName(id,q)' retur
 ITEM.Description = "" --A description of what the item is.
 ITEM.Model = "" --The items model.
 ITEM.Weight = 0.0 --The items weight.
-ITEM.Type = TYPE_ITEM --Item type. (for easier use-with-code, maybe sorting later).
+ITEM.Type = 0 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = TYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
 ITEM.CanSpawn = true --Can this item be dropped?
 ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
 ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.
 ITEM.Stackable = false --Can this item be stacked? (quantity greater than 1) [Optional]
 
 ITEM.Actions = {} --The actions displayed when the menu is used.
-ITEM.Actions[0] = { --Overridden on TYPE_WEAPON items, however still NOT optional.
+ITEM.Actions[0] = { --Overridden on ITYPE_WEAPON items, however still NOT optional.
 	Name = "Use",
 	ShowOption = function(player) return true end, --Optional
-	DoAction = function(player,slot) --Optional on Action[0] for TYPE_WEAPON items ONLY.
+	DoAction = function(player,slot) --Optional on Action[0] for ITYPE_WEAPON items ONLY.
 		--Code here.
 	end
 }
@@ -85,7 +85,7 @@ ITEM.Actions[1] = {--NOTE: If you don't include a 'DoAction' on Action[max] it i
 }
 
 --OPTIONAL:
-ITEM.Class = CLASS_NONE --Class for this item. (for easier use-with-code.)
+ITEM.Class = 0 -- 0 = ICLASS_NONE, 1 = ICLASS_FISH, 2 = ICLASS_PRIMARY, 3 = ICLASS_SECONDARY, 4 = ICLASS_MELEE.
 ITEM.WepClass = "" -- For easier use with weapons. Example: "weapon_pistol"
 ITEM.ClassOverride = "darkrp_item" --Entity class that is created when 'item.CreateLoot()' spawns this item.
 ITEM.DropAng = Angle(0,0,0) --Choose the angle this item spawns at when created with 'item.CreateLoot(id)'
@@ -94,4 +94,6 @@ ITEM.Args = { -- For variables that are specific to this item-type only.
 	--Example = false,
 	--Example2 = true
 }
+
+items.Register(ITEM)
 ```

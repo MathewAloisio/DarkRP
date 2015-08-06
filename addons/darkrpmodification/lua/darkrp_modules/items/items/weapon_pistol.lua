@@ -5,7 +5,7 @@ ITEM.Plural = "Pistols"
 ITEM.Description = "Example weapon item."
 ITEM.Model = "models/weapons/w_pistol.mdl"
 ITEM.Weight = 2.5
-ITEM.Type = TYPE_WEAPON
+ITEM.Type = 4 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = TYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
 ITEM.CanSpawn = true 
 ITEM.LookAt = vector_origin
 ITEM.CamPos = Vector(10,40,0)
@@ -15,11 +15,7 @@ ITEM.Actions[0] = {
     Name = "Equip"
 }
 ITEM.Actions[1] = {
-    Name = "Drop",
-    ShowOption = function(player) return true end,
-    DoAction = function(player, slot)
-        --Code here.
-    end
+    Name = "Drop"
 }
 --OPTIONAL:
 ITEM.WepClass = "weapon_pistol" -- For easier use with weapons. Example: "weapon_pistol"

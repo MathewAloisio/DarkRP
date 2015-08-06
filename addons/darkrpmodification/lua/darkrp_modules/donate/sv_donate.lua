@@ -16,12 +16,13 @@ local function networkDonate(player)
 end
 
 hook.Add("PlayerInitialSpawn", "loadDonate", function(player)
-	if file.Exists(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA") then
-		local tbl = pon.decode(file.Read(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA"))
+	if file.Exists(string.format("roleplay/donate/%s.txt", player:UniqueID()), "DATA") then
+		local tbl = pon.decode(file.Read(string.format("roleplay/donate/%s.txt", player:UniqueID()), "DATA"))
 		player.Donate = tbl.rank
 		player.DonateTime = tbl.date
-		player.DonateExpire = os.difftime(tbl.date, os.time())
+		player.DonateExpire = 0
 		if tbl.rank > 0 then
+			player.DonateExpire = os.difftime(tbl.date, os.time())
 			local dl = player:DonateDaysLeft()
 			if dl > 0 then --Not yet expired.
 				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! you're a %s donator and your rank is set to expire in %d days.", defines.TranslateDonate(tbl.rank), dl))

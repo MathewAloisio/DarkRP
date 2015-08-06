@@ -7,7 +7,7 @@ local function recalculateInvWeight(player)
 	for slot=0,player:GetMaxInvSlots() do
 		if player.Inv[slot][ITEM_ID] != 0 then
 			if items.IsStackable(player.Inv[slot][ITEM_ID]) then
-				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * items.GetWeight(player.Inv[slot][ITEM_Q]))
+				player.InvWeight = player.InvWeight + (items.GetWeight(player.Inv[slot][ITEM_ID]) * player.Inv[slot][ITEM_Q])
 			else
 				player.InvWeight = player.InvWeight + items.GetWeight(player.Inv[slot][ITEM_ID])
 			end
@@ -31,8 +31,12 @@ end
 
 hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
 	player.Inv = {}
-	for slot=0,INV_SLOT_LIMIT do
+	for slot=0,INV_SLOT_LIMIT do --Fully initialize our table.
 		player.Inv[slot] = {}
+		player.Inv[slot][ITEM_ID] = 0
+		player.Inv[slot][ITEM_Q] = 0
+		player.Inv[slot][ITEM_E] = 0
+		player.Inv[slot][ITEM_EX] = 0
 	end
 
 	if file.Exists(string.format("roleplay/inventory/%s.txt", player:UniqueID()), "DATA") then
@@ -58,8 +62,8 @@ end)
 
 DarkRP.defineChatCommand("putgun", function(player, args)
 	local weapon = player:GetActiveWeapon()
-	if not weapon.ItemID then DarkRP.Notify(player, 1, 4, "You can't put this weapon into your inventory.") return "" end
-	if player.holsterTime and player.holsterTime > CurTime() then DarkRP.Notify(player, 1, 4, "You can't put this weapon away yet.") return "" end
+	if not weapon.ItemID then DarkRP.notify(player, 1, 4, "You can't put this weapon into your inventory.") return "" end
+	if player.holsterTime and player.holsterTime > CurTime() then DarkRP.notify(player, 1, 4, "You can't put this weapon away yet.") return "" end
 	player.holsterTime = CurTime() + 2
 	player:GiveInvItem(weapon.ItemID, 1, weapon:Clip1())
 	player:StripWeapon(weapon:GetClass())
@@ -74,16 +78,20 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 	if inv[ITEM_ID] ~= 0 then
 		local tbl = items.Get(inv[ITEM_ID])
 		if tbl == nil then MsgN(string.format("[ERROR] Item[%i] not found. Called by [rp_invaction].", inv[ITEM_ID])) return end
-		if tbl.ShowOption ~= nil and tbl.ShowOption(player) == false then return end --direct-concommand abuse protection.
-		if tbl.Type == TYPE_WEAPON and action == 0 then
-			if player:HasWeapon(tbl.WepClass) then DarkRP.Notify(player, 1, 4, "You already have this weapon equipped!") return end
-			local wep = player:Give(tbl.WepClass)
-			wep:SetClip1(inv[ITEM_E])
-			player:RemoveInvItem(_, 0, slot)
-			player:SelectWeapon(tbl.WepClass)
-			wep.ItemID = tbl.ID
-			if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player, slot) end
-			return
+		if (tbl.ShowOption ~= nil and tbl.ShowOption(player) == false) then return end --direct-concommand abuse protection. (this means we need an equivalent ShowOption serverside and clientside.)
+		if action == 0 then
+			DarkRP.notify(player, 1, 4, "Type: "..tostring(tbl.Type).."!")
+			if tbl.Type == ITYPE_WEAPON then
+				if player:HasWeapon(tbl.WepClass) then DarkRP.notify(player, 1, 4, "You already have this weapon equipped!") return end
+				local wep = player:Give(tbl.WepClass)
+				wep:SetClip1(inv[ITEM_E])
+				player:RemoveInvItem(_, 0, slot)
+				player:SelectWeapon(tbl.WepClass)
+				wep.ItemID = tbl.ID
+				if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player, slot) end
+				return
+			end
+			--TODO: Add other custom types like food.
 		end
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
@@ -92,6 +100,14 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 			player:DropInvItem(slot)
 		end
 	end
+end)
+
+concommand.Add("rp_giveitem", function(player, cmd, args) 
+	if player:IsDev() == false then DarkRP.notify(player, 1, 4, "Only developers can use this command!") return end
+	if #args < 4 then DarkRP.notify(player, 2, 4, "[Usage] rp_giveitem [id] [quantity] [ex] [ex2]") return end
+	local q = tonumber(args[2])
+	player:GiveInvItem(tonumber(args[1]), q, tonumber(args[3]), tonumber(args[4]))
+	DarkRP.notify(player, 4, 4, string.format("You've given yourself %s (x%i) [ITEM_E = %i] [ITEM_EX = %i]", items.GetName(tonumber(args[1]),q), q, tonumber(args[3]), tonumber(args[4])))
 end)
 
 local PLAYER = FindMetaTable("Player")
@@ -119,7 +135,7 @@ function PLAYER:CheckInv() --Check if the inventory is full
 end
 
 function PLAYER:GetMaxInvWeight() --Can be mimicked clientside, no need to network.
-	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*5) --TODO: Make the skill system.
+	return MAX_INV_WEIGHT --+ (self:GetLevel("Strength")*5) --TODO: Make the skill system.
 end
 
 function PLAYER:CanHoldItem(id,q)
@@ -174,14 +190,14 @@ function PLAYER:RemoveInvItem(id, quantity, slot)
 	local slot = slot or -1
 	if slot == -1 then
 		for i=0,self:GetMaxInvSlots() do
-			if self.Inv[slot][ITEM_ID] == 0 then
+			if self.Inv[slot][ITEM_ID] == id then
 				slot = i
 				break
 			end
 		end
 	end
-	if slot == -1 then return end -- Kill the function if their is no slot specified and the item wasn't found.
-	if quantity == 0 or not items.IsStackable(id) then -- Remove all items.
+	if slot == -1 then return end -- Kill the function if their is still no slot specified and the item wasn't found.
+	if quantity == 0 or not items.IsStackable(self.Inv[slot][ITEM_ID]) then -- Remove all items.
 		self.Inv[slot][ITEM_ID] = 0
 		self.Inv[slot][ITEM_Q] = 0
 		self.Inv[slot][ITEM_E] = 0
@@ -252,8 +268,8 @@ end
 function PLAYER:DropInvItem(slot,force)
 	local force = force or 0
 	if self.Inv[slot][ITEM_ID] == 0 then return false end
-	if (pl.nextItemDrop and pl.nextItemDrop > CurTime()) and force == 0 then DarkRP.Notify(self, 1, 4, "Wait a moment before dropping another item.") return false end
-	pl.nextItemDrop = CurTime() + 2
+	if (self.nextItemDrop and self.nextItemDrop > CurTime()) and force == 0 then DarkRP.notify(self, 1, 4, "Wait a moment before dropping another item.") return false end
+	self.nextItemDrop = CurTime() + 2
 	local tbl = {
 		id = self.Inv[slot][ITEM_ID],
 		q = self.Inv[slot][ITEM_Q],
@@ -266,17 +282,16 @@ function PLAYER:DropInvItem(slot,force)
 	self.Inv[slot][ITEM_EX] = 0
 	fixInventory(self)
 	saveInventory(self)
-	local tr = pl:GetEyeTrace(100)
-	local ent = items.CreateLoot(tbl.id, tbl.q, tbl.e, tbl.ex, tr.HitPos+1, items.Get(tbl.id).DropAng or nil)
+	networkInventory(self)
+	local tr = self:GetEyeTrace(100)
+	local ent = items.CreateLoot(tbl.id, tbl.q, tbl.e, tbl.ex, tr.HitPos, items.Get(tbl.id).DropAng or nil)
 	if ent ~= false and IsValid(ent) then
 		ent:SetPos(tr.HitPos + (tr.HitNormal*(ent:OBBMaxs()*2)))
 	end
 	return true
 end
 
-//Binds ShowTeam [F2] key to the inventory change how you want this is just how i was testing the menu.
-function ShowTeam(ply)
+hook.Add("ShowTeam", "Inventory::OpenMenu", function(player)
 	net.Start("openInventoryMenu")
-	net.Send(ply)
-end
-hook.Add("ShowTeam", "Inventory::OpenMenu", ShowTeam)
+	net.Send(player)
+end)
