@@ -98,7 +98,7 @@ local function makeItemSlot(id, slot)
 			if panel:IsHovered() then
 				draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), 100))
 				surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
-				surface.DrawOutlinedRect( 0, 0, panel:GetWide(), panel:GetTall() )
+				surface.DrawOutlinedRect(0, 0, panel:GetWide(), panel:GetTall())
 			end
 		end
 
@@ -140,7 +140,7 @@ local function createInventory()
 	MenuList:EnableHorizontal(true)
 	MenuList:EnableVerticalScrollbar(true)
 	MenuList.Paint = function()
-		draw.RoundedBox( 4, 0, 0, Menu:GetWide() - 50, Menu:GetTall() - 50, Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
+		draw.RoundedBox(4, 0, 0, Menu:GetWide() - 50, Menu:GetTall() - 50, Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
 	end
 end
 

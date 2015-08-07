@@ -19,7 +19,6 @@ local function saveInventory(player)
 	recalculateInvWeight(player)
 	file.Write(string.format("roleplay/inventory/%s.txt", player:UniqueID()), pon.encode(player.Inv))
 end
-hook.Add("PlayerDisconnect", "inventoryDisconnect", saveInventory) --Redundant but just incase.
 
 local function networkInventory(player)
 	net.Start("networkInventory")
@@ -29,7 +28,7 @@ local function networkInventory(player)
 	net.Send(player)
 end
 
-hook.Add("PlayerInitialSpawn", "loadInventory", function(player)
+hook.Add("PlayerInitialSpawn", "Inventory::InitialSpawn", function(player)
 	player.Inv = {}
 	for slot=0,MAX_INV_SLOTS do --Fully initialize our table.
 		player.Inv[slot] = {}
@@ -121,7 +120,7 @@ function PLAYER:CheckInv() --Check if the inventory is full
 end
 
 function PLAYER:GetMaxInvWeight() --Can be mimicked clientside, no need to network.
-	return MAX_INV_WEIGHT --+ (self:GetLevel("Strength")*5) --TODO: Make the skill system.
+	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*2)
 end
 
 function PLAYER:CanHoldItem(id,q)

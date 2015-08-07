@@ -241,7 +241,7 @@ GM.Config.changejobtime					= 10
 -- runspeed - Sets the max running speed.
 GM.Config.runspeed						= 240
 -- runspeed - Sets the max running speed for CP teams
-GM.Config.runspeedcp					= 255
+GM.Config.runspeedcp					= 245
 -- searchtime - Number of seconds for which a search warrant is valid.
 GM.Config.searchtime					= 30
 -- ShipmentSpawnTime - Antispam time between spawning shipments.
@@ -270,6 +270,8 @@ GM.Config.falldamagedamper				= 15
 GM.Config.falldamageamount				= 10
 -- printeroverheatchance - The likelyhood of a printer overheating. The higher this number, the less likely. Minimum 3. Default 22
 GM.Config.printeroverheatchance			= 22
+-- jumppower - The base jump-power that the "acrobatics" skill will be based off of.
+GM.Config.jumppower				        = 200
 
 --[[---------------------------------------------------------------------------
 Other settings
