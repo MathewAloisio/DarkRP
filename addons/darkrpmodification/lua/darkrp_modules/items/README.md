@@ -62,7 +62,7 @@ ITEM.Plural = ITEM.Name or "" --The name of the item 'items.GetName(id,q)' retur
 ITEM.Description = "" --A description of what the item is.
 ITEM.Model = "" --The items model.
 ITEM.Weight = 0.0 --The items weight.
-ITEM.Type = 0 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = TYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
+ITEM.Type = 0 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = ITYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
 ITEM.CanSpawn = true --Can this item be dropped?
 ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
 ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.

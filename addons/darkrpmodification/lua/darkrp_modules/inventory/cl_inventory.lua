@@ -96,6 +96,7 @@ local function makeItemSlot(id, slot)
 				draw.SimpleText(Inv[slot][ITEM_Q], "DermaDefaultBold", panel:GetWide()-1.5, panel:GetTall()-1.5, Color(255, 255, 255, 255), 2, 4) 
 			end
 			if panel:IsHovered() then
+				draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), 100))
 				surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
 				surface.DrawOutlinedRect( 0, 0, panel:GetWide(), panel:GetTall() )
 			end

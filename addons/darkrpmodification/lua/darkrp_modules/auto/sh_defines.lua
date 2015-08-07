@@ -57,7 +57,7 @@ end
 
 local PLAYER = FindMetaTable("Player")
 
-local developers = {"STEAM_0:1:20252092","STEAM_0:0:33368563"}
+local developers = {"STEAM_0:1:20252092","STEAM_0:0:19681809"}
 function PLAYER:IsDev()
 	if table.HasValue(developers, self:SteamID()) then return true end
 	return false

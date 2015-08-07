@@ -1,8 +1,8 @@
-1. Finish Inventory. (menu, weapon equipping/unequipping.)
+*DONE*1. Finish Inventory. (menu, weapon equipping/unequipping.)
 2. Finish skills.
 3. Code NPC banks.
 4. Code a drug system. (with an NPC to sell drugs to.)
-5. Code donator system & automated donations.
+*DONE*5. Code donator system & automated donations.
 6. Code a new soundURL.
 7. Code vehicle system. (with fuel, trunk-space, direct-url and "radio stations" stereos.) [try to use RVX car dealer style dealership]
 8. Code a mask system.
