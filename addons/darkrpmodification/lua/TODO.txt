@@ -1,5 +1,5 @@
 *DONE*1. Finish Inventory. (menu, weapon equipping/unequipping.)
-2. Finish skills.
+*DONE*2. Finish skills.
 3. Code NPC banks.
 4. Code a drug system. (with an NPC to sell drugs to.)
 *DONE*5. Code donator system & automated donations.
