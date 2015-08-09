@@ -3,74 +3,66 @@ local meta = FindMetaTable("NPC")
 function meta:SetNPCName(str)
 	self.m_Name = str
 end
-function meta:GetName()
+function meta:GetNPCName()
 	return self.m_Name
 end
+
+local function StopChatting(player)
+	player.TalkingTo = nil
+	player.ChatNum = nil
+	umsg.Start("endChat", player)
+	umsg.End()
+	player:Freeze(false)
+end
  
-local function TalkToNPC(pl,cmd,args)
-	local ent 		= ents.GetByIndex(args[1])
-	local response	= tonumber(args[2])
+local function TalkToNPC(player, cmd, args)
+	local ent = ents.GetByIndex(args[1])
+	local response = tonumber(args[2])
 	
-	if !IsValid(ent) || !pl:CanReach(ent) then return end
+	if not IsValid(ent) || not player:CanReach(ent) then return end
+	if not ent:CanChat() || not defines.Dialog[ent:GetNPCName()] then return end --This NPC can't chat
+	if not response && not player.TalkingTo then
+		player:Freeze(true)
+		player.TalkingTo = ent:GetNPCName()
+		player.lastTalkEnt = ent
+		player.ChatNum = 1
 
-	if !ent:CanChat() || !Dialog[ent:GetName()] then return end --This NPC can't chat
-
-	if !response && !pl.TalkingTo then
-
-		pl:Freeze(true) --freeze them in place while they are talking
-		pl.TalkingTo 	= ent:GetName()
-		pl.lastTalkEnt	= ent
-		pl.ChatNum		= 1
-
-		umsg.Start("beginChatting",pl)
+		umsg.Start("beginChatting",player)
 			umsg.Short(ent:EntIndex())
-			umsg.String(ent:GetName())
-				local t = Dialog[pl.TalkingTo][pl.ChatNum].Replies
+			umsg.String(ent:GetNPCName())
+				local t = defines.Dialog[player.TalkingTo][player.ChatNum].Replayeries
 				
-				if type(t) == "function" then t = t(pl) end
+				if type(t) == "function" then t = t(player) end
 
 				for i,v in pairs(t) do
 					umsg.Short(v)
 				end
-		umsg.End()	
- 
-
-
-	elseif response && pl.TalkingTo then
-		local t = Dialog[pl.TalkingTo][pl.ChatNum].Replies
-		if type(t) == "function" then t = t(pl) end
-		for i,v in pairs(t) do
-			if v == response then --the reply is a valid reply to your current position in the dialog (so you cant accept a quest right after you say hello)
-				local newNum = Replies[pl.TalkingTo][response].OnUse(pl,ent)
-				if !newNum then StopChatting(pl) return end
-				pl.ChatNum = newNum
-				umsg.Start("NPCRespond",pl)
-					umsg.Short(newNum) --send the new position you should be at
-					local t = Dialog[pl.TalkingTo][pl.ChatNum].Replies
+		umsg.End()
+	elseif response && player.TalkingTo then
+		local t = defines.Dialog[player.TalkingTo][player.ChatNum].Replayeries
+		if type(t) == "function" then t = t(player) end
+		for _,v in pairs(t) do
+			if v == response then
+				local newNum = Replayeries[player.TalkingTo][response].OnUse(player,ent)
+				if not newNum then StopChatting(player) return end
+				player.ChatNum = newNum
+				umsg.Start("NPCRespond",player)
+					umsg.Short(newNum) --send the new dialog-id you should be at.
+					local t = defines.Dialog[player.TalkingTo][player.ChatNum].Replayeries
 					
-					if type(t) == "function" then t = t(pl) end
+					if type(t) == "function" then t = t(player) end
 
-					for i,v in pairs(t) do
-						umsg.Short(v)
+					for _,val in pairs(t) do
+						umsg.Short(val)
 					end
 				umsg.End()
 				return
 			end
-			
 		end
 		return
-
 	end
 end
-concommand.Add("talkto",TalkToNPC)
-
-function StopChatting(pl)
-	pl.TalkingTo = nil
-	pl.ChatNum = nil
-	umsg.Start("endChat",pl)
-	umsg.End()
-	pl:Freeze(false)
-end
+concommand.Add("talkto", TalkToNPC)
 
 
 

@@ -71,6 +71,12 @@ function PLAYER:SetLevel(skill, val)
 	networkSkills(self)
 end
 
+function PLAYER:SetExp(skill, val)
+	self.Level[skill] = val
+	saveSkills(self)
+	networkSkills(self)
+end
+
 function PLAYER:AddExp(skill, val)
 	self.Exp[skill] = self.Exp[skill] + val
 	if self.Exp[skill] >= skills.Get(skill).getNeeded(self) and self:CanLevel(skill) then self:LevelUp(skill) end

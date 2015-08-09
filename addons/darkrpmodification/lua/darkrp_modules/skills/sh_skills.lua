@@ -53,11 +53,9 @@ end
 
 local PLAYER = FindMetaTable("Player")
 
-function PLAYER:CanLevel(skill)
-	if SERVER then
+if SERVER then
+	function PLAYER:CanLevel(skill)
 		return self.Level[skill] < skillTbl[skill].maxLevel
-	else
-		return Level[skill] < skillTbl[skill].maxLevel
 	end
 end
 

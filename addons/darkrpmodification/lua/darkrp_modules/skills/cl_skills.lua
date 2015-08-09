@@ -1,16 +1,6 @@
 local Exp = Exp or {}
 local Level = Level or {}
 
-_G.skills = _G.skills or {}
-
-function skills.GetLevel(skill)
-	return Level[skill] or 1
-end
-
-function skills.GetExp(skill)
-	return Exp[skill] or 1
-end
-
 for i,v in pairs(skills.GetAll()) do
 	Exp[i] = 0
 	Level[i] = 1

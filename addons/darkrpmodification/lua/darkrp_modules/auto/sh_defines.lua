@@ -73,3 +73,8 @@ if SERVER then
 		fw(path, data)
 	end
 end
+
+defines.Dialog = {}
+if CLIENT then
+	defines.Replies = {} --only initialize client-side because it's never called by the server.
+end
