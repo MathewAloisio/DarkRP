@@ -140,7 +140,7 @@ local function createInventory()
 	MenuList:EnableHorizontal(true)
 	MenuList:EnableVerticalScrollbar(true)
 	MenuList.Paint = function()
-		draw.RoundedBox(4, 0, 0, Menu:GetWide() - 50, Menu:GetTall() - 50, Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
+		draw.RoundedBox(4, 0, 0, Menu:GetWide() - 50, Menu:GetTall() - 5, Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
 	end
 end
 
@@ -159,7 +159,7 @@ end)
 
 net.Receive("openInventoryMenu", function(len, ply)
 	if IsOpen == false then
-		Menu:MoveTo(ScrW()-defines.ScreenScale(453),ScrH()-500,0.2,0,1)
+		Menu:MoveTo(ScrW()-defines.ScreenScale(440),ScrH()-500,0.2,0,1) --453 was orig.
 		gui.EnableScreenClicker(true)
 		IsOpen = true
 	elseif IsOpen == true then

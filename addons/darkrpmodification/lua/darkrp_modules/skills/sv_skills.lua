@@ -24,6 +24,7 @@ local function saveSkills(player)
 	}
 	file.Write(string.format("roleplay/skills/%s.txt", player:UniqueID()), pon.encode(tbl))
 end
+hook.Add("PlayerDisconnected", "Skills::OnDisconnect", saveSkills)
 
 hook.Add("PlayerInitialSpawn", "Skills::InitialSpawn", function(player)
 	player.Level = {}
@@ -57,6 +58,7 @@ local PLAYER = FindMetaTable("Player")
 
 function PLAYER:LevelUp(skill)
 	self.Level[skill] = self.Level[skill] + 1
+	self.Exp[skill] = 0
 	if skills.Get(skill).levelUp then skills.Get(skill).levelUp(self) end
 	DarkRP.notify(self, 4, 4, string.format("Congratulations! You've leveled your %s skill to level %i.", skill, self.Level[skill]))
 	saveSkills(self)

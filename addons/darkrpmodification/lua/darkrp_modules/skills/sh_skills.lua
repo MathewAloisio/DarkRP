@@ -4,6 +4,7 @@ end
 hook.Add("PlayerSpawn", "Skills:UpdateJumpPower", UpdateJumpPower)
 
 hook.Add("UpdatePlayerSpeed", "Skills::UpdatePlayerSpeed", function(player) --Handle player speed.
+	if player.Level == nil then return end --Because 'UpdatePlayerSpeed' is called after the player disconnects.
 	if player:isArrested() then
 		GAMEMODE:SetPlayerSpeed(player, GAMEMODE.Config.arrestspeed, GAMEMODE.Config.arrestspeed+(player:GetLevel("Stamina")*2))
 	elseif player:isCP() then
