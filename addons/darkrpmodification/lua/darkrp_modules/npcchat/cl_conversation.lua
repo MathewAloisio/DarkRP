@@ -109,8 +109,8 @@ local function endChat()
 end
 usermessage.Hook("endChat",endChat)
 
-hook.Add("PlayerBindPress", "NPCUse", function(ply, bind, pressed) 
-	if string.find(bind, "+use") then
+hook.Add("PlayerBindPress", "NPCUse", function(player, bind, pressed) 
+	if string.find(bind, "+use") and not ValidPanel(NPCChatMenu) then
 		local tr = {}
 		tr.start = LocalPlayer():GetShootPos()
 		tr.endpos = tr.start + LocalPlayer():GetAimVector()*110

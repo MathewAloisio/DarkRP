@@ -76,7 +76,13 @@ ITEM.Actions[0] = { --Overridden on ITYPE_WEAPON items, however still NOT option
 		--Code here.
 	end
 }
-ITEM.Actions[1] = {--NOTE: If you don't include a 'DoAction' on Action[max] it is assumed to be 'Drop'.
+ITEM.Actions[1] = { -- #ITEM.Actions-2 is "Combine" on items where 'ITEM.Stackable == true'.
+    Name = "Combine"
+}
+ITEM.Actions[2] = {-- #ITEM.Actions-1 is "Divide" on items where 'ITEM.Stackable == true'.
+    Name = "Divide"
+}
+ITEM.Actions[3] = {--NOTE: If you don't include a 'DoAction' on Action[max] it is assumed to be 'Drop'.
 	Name = "Drop",
 	ShowOption = function(player) return true end, --Optional
 	DoAction = function(player,slot) --Optional on the LAST ACTION only.

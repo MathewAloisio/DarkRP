@@ -15,7 +15,13 @@ ITEM.Actions = {} --The actions displayed when the menu is used.
 ITEM.Actions[0] = {
     Name = "Use"
 }
-ITEM.Actions[1] = {
+ITEM.Actions[1] = { -- #ITEM.Actions-2 is "Combine" on items where 'ITEM.Stackable == true'.
+    Name = "Combine"
+}
+ITEM.Actions[2] = {-- #ITEM.Actions-1 is "Divide" on items where 'ITEM.Stackable == true'.
+    Name = "Divide"
+}
+ITEM.Actions[3] = {
     Name = "Drop",
 	DoAction = function(player, slot)
 		if CLIENT then 

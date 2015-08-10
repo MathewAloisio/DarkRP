@@ -20,9 +20,19 @@ ICLASS_PRIMARY = 2
 ICLASS_SECONDARY = 3
 ICLASS_MELEE = 4
 
+-- Modifier types
+MOD_WEIGHT = 0
+MOD_SPEED = 1
+
 -- Inventory settings.
 MAX_INV_SLOTS = 49 --Limit = MAX_INV_SLOTS + 1 because we use '0' in our loops.
 MAX_INV_WEIGHT = 100
+
+-- Bank settings.
+MAX_BANK_SLOTS = 49 --Limit = MAX_INV_SLOTS +1 because we use '0' in our loops.
+
+--General settings.
+MAX_INTERACT_DIST = 100
 
 _G.defines = _G.defines or {}
 
@@ -63,6 +73,10 @@ function PLAYER:IsDev()
 	return false
 end
 
+function PLAYER:CanReach(ent)
+	return self:GetPos():Distance(ent:GetPos()) < MAX_INTERACT_DIST
+end
+
 if SERVER then
 	local fw = file.Write
 	function file.Write(path, data) --file.Write hotfix, auto create directories.
@@ -74,7 +88,5 @@ if SERVER then
 	end
 end
 
-defines.Dialog = {}
-if CLIENT then
-	defines.Replies = {} --only initialize client-side because it's never called by the server.
-end
+defines.Dialog = defines.Dialog or {}
+defines.Replies = defines.Replies or {}

@@ -50,7 +50,7 @@ hook.Add("PlayerInitialSpawn", "Inventory::InitialSpawn", function(player)
 		end
 		saveInventory(player)
 	end
-	networkInventory(player)
+	timer.Simple(0.1, function() networkInventory(player) end)
 end)
 
 hook.Add("ShutDown", "inventoryShutDown", function() --Redundant but just incase.
@@ -94,6 +94,10 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
 			tbl.Actions[action].DoAction(player, slot)
+		elseif actions == #tbl.Actions-2 then -- Combine
+			-- TODO: Combine for quantity-based items.
+		elseif actions == #tbl.Actions-1 then -- Divide
+			-- TODO: Divide for quantity-based items.
 		elseif action >= #tbl.Actions then --Drop since we're on the last Action and there is no custom 'DoAction' set, assumed drop.
 			player:DropInvItem(slot)
 		end
@@ -119,11 +123,11 @@ function PLAYER:CheckInv() --Check if the inventory is full
 	return false
 end
 
-function PLAYER:GetMaxInvWeight() --Can be mimicked clientside, no need to network.
-	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*2)
+function PLAYER:GetMaxInvWeight()
+	return MAX_INV_WEIGHT + (self:GetLevel("Strength")*2) + self:GetMod(MOD_WEIGHT)
 end
 
-function PLAYER:CanHoldItem(id,q)
+function PLAYER:CanHoldItem(id, q)
 	local q = q or 1
 	if items.IsStackable(id) then
 		if (self.InvWeight + (items.Get(id).Weight * q)) > self:GetMaxInvWeight() then return false end
@@ -153,19 +157,18 @@ function PLAYER:GiveInvItem(id, quantity, e, ex)
 	return false
 end
 
-local function fixInventory(self) -- Slides everything down 1 inv-slot when an item is removed.
-	local max_slots = MAX_INV_SLOTS --Store it just incase it changes in the fraction of a second this takes to run.
-	for slot=0,max_slots do
-		if self.Inv[slot][ITEM_ID] == 0 and slot != max_slots then
+local function fixInventory(player) -- Slides everything down 1 inv-slot when an item is removed.
+	for slot=0,MAX_INV_SLOTS do
+		if player.Inv[slot][ITEM_ID] == 0 and slot != MAX_INV_SLOTS then
 			local new = slot+1
-			self.Inv[slot][ITEM_ID] = self.Inv[new][ITEM_ID]
-			self.Inv[new][ITEM_ID] = 0
-			self.Inv[slot][ITEM_Q] = self.Inv[new][ITEM_Q]
-			self.Inv[new][ITEM_Q] = 0
-			self.Inv[slot][ITEM_E] = self.Inv[new][ITEM_E]
-			self.Inv[new][ITEM_E] = 0
-			self.Inv[slot][ITEM_EX] = self.Inv[new][ITEM_EX]
-			self.Inv[new][ITEM_EX] = 0
+			player.Inv[slot][ITEM_ID] = player.Inv[new][ITEM_ID]
+			player.Inv[new][ITEM_ID] = 0
+			player.Inv[slot][ITEM_Q] = player.Inv[new][ITEM_Q]
+			player.Inv[new][ITEM_Q] = 0
+			player.Inv[slot][ITEM_E] = player.Inv[new][ITEM_E]
+			player.Inv[new][ITEM_E] = 0
+			player.Inv[slot][ITEM_EX] = player.Inv[new][ITEM_EX]
+			player.Inv[new][ITEM_EX] = 0
 		end
 	end
 end

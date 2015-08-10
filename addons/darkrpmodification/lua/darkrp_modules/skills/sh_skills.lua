@@ -1,4 +1,5 @@
 local function UpdateJumpPower(player)
+	if player.Level == nil then return end
 	player:SetJumpPower(GAMEMODE.Config.jumppower+(player:GetLevel("Acrobatics")*2))
 end
 hook.Add("PlayerSpawn", "Skills:UpdateJumpPower", UpdateJumpPower)

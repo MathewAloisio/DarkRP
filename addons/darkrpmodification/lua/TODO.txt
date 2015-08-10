@@ -1,8 +1,12 @@
 *DONE*1. Finish Inventory. (menu, weapon equipping/unequipping.)
 *DONE*2. Finish skills.
-3. Code NPC banks.
-4. Code a drug system. (with an NPC to sell drugs to.)
-*DONE*5. Code donator system & automated donations.
-6. Code a new soundURL.
-7. Code vehicle system. (with fuel, trunk-space, direct-url and "radio stations" stereos.) [try to use RVX car dealer style dealership]
-8. Code a mask system.
+*DONE*3. Code donator system & automated donations.
+*DONE*4. Code 'modifier' library. (e.g: local weight = weight + PLAYER:GetMod(MOD_WEIGHT))
+5. Code 'clothing' library with in-game editor. (NOTE: use 'modifier' library for stat-editing.) (STYLE: similiar parsing to 'items'. F4 menu for clothing mods, link inventory system in.)
+*DONE*6. Code NPC banks.
+7. Code a drug system. (with an NPC to sell drugs to.)
+8. Code a new soundURL.
+9. Code vehicle system. (with fuel, trunk-space, direct-url and "radio stations" stereos.) [try to use RVX car dealer style dealership]
+10. Implement gPhone or rPhone.
+11. Code corpse system.
+12. Code a mask system.

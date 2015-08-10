@@ -17,6 +17,10 @@ function inventory.GetMaxInvWeight()
 	return MaxInvWeight or MAX_INV_WEIGHT
 end
 
+function inventory.GetWeight()
+	return InvWeight or 0
+end
+
 function inventory.CanHoldItem(id)
 	if (InvWeight + items.Get(id).Weight) > GetMaxInvWeight() then return false end
 	return true
@@ -85,9 +89,8 @@ local function makeItemSlot(id, slot)
 		local tbl = items.Get(id)
 		panel = vgui.Create("DModelPanel", MenuList)
 		panel:SetModel(tbl.Model)
-		panel:SetTooltip(index)
+		panel:SetTooltip(items.GetName(id, Inv[slot][ITEM_Q]))
 		panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
-		panel.ItemID = id
 		panel.Slot = slot
 		panel:SetCamPos(tbl.CamPos)
 		panel:SetLookAt(tbl.LookAt)
@@ -133,6 +136,8 @@ local function createInventory()
 
 		surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
 		surface.DrawLine(0, 20, Menu:GetWide(), 20)
+		
+		draw.RoundedBox(0,2,24,InvWeight/MaxInvWeight*(Menu:GetWide()-4),7,Color(InvWeight/MaxInvWeight*255,255-InvWeight/MaxInvWeight*255,0,255))
 	end
 
 	MenuList = vgui.Create("DPanelList", Menu)
@@ -155,6 +160,7 @@ net.Receive("networkInventory", function(len)
 			makeItemSlot(Inv[slot][ITEM_ID], slot)
 		end
 	end
+	if getBanking() ~= nil then getBanking():RebuildInventory() end
 end)
 
 net.Receive("openInventoryMenu", function(len, ply)
