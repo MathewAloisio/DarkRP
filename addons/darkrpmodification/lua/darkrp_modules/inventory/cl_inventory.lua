@@ -4,6 +4,18 @@ local InvWeight = InvWeight or 0.0
 local MaxInvWeight = MaxInvWeight or MAX_INV_WEIGHT
 local Inv = Inv or {}
 
+net.Receive("startDivide", function(len)
+	local id = net.ReadDouble()
+	local slot = net.ReadDouble()
+	if Inv[slot][ITEM_ID] ~= id then return end --Incase the inv shifts while this is happening.
+	Derma_StringRequest( "Question", 
+		"How many do you want to divide out of this stack?", 
+		"Type a number here.", 
+		function( strTextOut ) RunConsoleCommand("divideItem", slot, strTextOut, id) end,
+		function( strTextOut )  end,
+		"Divide", 
+		"Cancel" )
+end)
 
 function inventory.GetAll()
 	return Inv
@@ -149,6 +161,7 @@ local function createInventory()
 	end
 end
 
+local CombineInv = CombineInv or nil
 net.Receive("networkInventory", function(len)
 	InvWeight = net.ReadFloat()
 	MaxInvWeight = net.ReadDouble()
@@ -161,10 +174,13 @@ net.Receive("networkInventory", function(len)
 		end
 	end
 	if getBanking() ~= nil then getBanking():RebuildInventory() end
+	if CombineInv ~= nil then CombineInv.inventory.Rebuild() end
 end)
 
 net.Receive("openInventoryMenu", function(len, ply)
 	if IsOpen == false then
+		if CombineInv ~= nil then return end -- Can't open while combining
+		if getBanking() ~= nil then return end -- Can't open while banking
 		Menu:MoveTo(ScrW()-defines.ScreenScale(440),ScrH()-500,0.2,0,1) --453 was orig.
 		gui.EnableScreenClicker(true)
 		IsOpen = true
@@ -179,4 +195,71 @@ hook.Add("Initialize", "buildInventory", function()
 	if not IsValid(Menu) then
 		createInventory()
 	end
+end)
+
+net.Receive("startCombine", function(len)
+	local id = net.ReadDouble()
+	local slot = net.ReadDouble()
+	if Inv[slot][ITEM_ID] ~= id then return end --Incase the inv shifts while this is happening.
+	if IsValid(Menu) then --Force the inventory shut.
+		Menu:MoveTo(ScrW(),ScrH()-500,0.2,0,1)
+		IsOpen = false
+	end
+	CombineInv = vgui.Create("DFrame")
+	CombineInv:SetTitle("Select the stack you want to combine your selected stack with.")
+	CombineInv:SetSize(ScrW()*0.6,ScrH()*0.3)
+	CombineInv:SetSkin("DarkRP")
+	CombineInv:SetDeleteOnClose(true)
+	CombineInv:SetDraggable(false)
+	CombineInv.OnClose = function()
+		gui.EnableScreenClicker(false)
+		CombineInv.inventory.list:Clear()
+		CombineInv = nil
+	end
+	CombineInv:Center()
+	
+	CombineInv.inventory = vgui.Create("DPanel", CombineInv)
+	CombineInv.inventory:StretchToParent(defines.ScreenScale(5), defines.ScreenScale(25), defines.ScreenScale(5), defines.ScreenScale(5))
+	CombineInv.inventory:SetVisible(true)
+	CombineInv.inventory.Rebuild = function()
+		CombineInv.inventory.list:Clear()
+		for i=0,MAX_INV_SLOTS do
+			local idex = Inv[i][ITEM_ID]
+			local panel
+			if idex ~= nil and idex ~= 0 and id == idex and slot ~= i then
+				local tbl = items.Get(idex)
+				panel = vgui.Create("DModelPanel", CombineInv.inventory.list)
+				panel:SetModel(tbl.Model)
+				panel:SetTooltip(items.GetName(idex, Inv[i][ITEM_Q]))
+				panel:SetSize(defines.ScreenScale(60), defines.ScreenScale(60))
+				panel:SetCamPos(tbl.CamPos)
+				panel:SetLookAt(tbl.LookAt)
+				panel.Slot = i
+				panel.PaintOver = function() 
+					if items.IsStackable(idex) then
+						draw.SimpleText(Inv[i][ITEM_Q], "DermaDefaultBold", panel:GetWide()-1.5, panel:GetTall()-1.5, Color(255, 255, 255, 255), 2, 4) 
+					end
+					if panel:IsHovered() then
+						draw.RoundedBox(8, 0, 0, panel:GetWide(), panel:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), 100))
+						surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
+						surface.DrawOutlinedRect(0, 0, panel:GetWide(), panel:GetTall())
+					end
+				end
+
+				panel.OnMousePressed = function()
+					RunConsoleCommand("combineItem", slot, panel.Slot, id)
+					CombineInv:Close()
+				end
+			end
+			CombineInv.inventory.list:AddItem(panel)
+		end	
+	end
+	CombineInv.inventory.list = vgui.Create("DPanelList", CombineInv.inventory)
+	CombineInv.inventory.list:SetSize(CombineInv.inventory:GetWide(), CombineInv.inventory:GetTall())
+	CombineInv.inventory.list:EnableHorizontal(true)
+	CombineInv.inventory.list:EnableVerticalScrollbar(true)
+	CombineInv.inventory.list.Paint = function()
+		draw.RoundedBox(4, 0, 0, CombineInv.inventory.list:GetWide(), CombineInv.inventory.list:GetTall(), Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
+	end	
+	CombineInv.inventory.Rebuild()
 end)

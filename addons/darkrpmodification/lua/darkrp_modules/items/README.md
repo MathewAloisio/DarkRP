@@ -67,6 +67,7 @@ ITEM.CanSpawn = true --Can this item be dropped?
 ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
 ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.
 ITEM.Stackable = false --Can this item be stacked? (quantity greater than 1) [Optional]
+ITEM.MaxStack = 100 --Largest stack size possible. (Only for use w/ items where 'ITEM.Stackable == true'.)
 
 ITEM.Actions = {} --The actions displayed when the menu is used.
 ITEM.Actions[0] = { --Overridden on ITYPE_WEAPON items, however still NOT optional.

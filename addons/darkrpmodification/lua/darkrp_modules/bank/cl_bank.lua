@@ -63,7 +63,7 @@ function PANEL:RebuildInventory()
 					menu:AddOption("Transfer X to bank",function()
 						Derma_StringRequest( "Question", 
 							"How many do you want to transfer?", 
-							"Type a number here", 
+							"Type a number here.", 
 							function( strTextOut ) RunConsoleCommand("itemToBank", panel.Slot, strTextOut) end,
 							function( strTextOut )  end,
 							"Transfer", 
@@ -149,7 +149,7 @@ function PANEL:RebuildItems()
 					menu:AddOption("Transfer X to inventory", function()
 						Derma_StringRequest( "Question", 
 							"How many do you want to transfer?", 
-							"Type a number here", 
+							"Type a number here.", 
 							function( strTextOut ) RunConsoleCommand("itemToInventory", panel.Slot, strTextOut) end,
 							function( strTextOut )  end,
 							"Transfer", 

@@ -10,6 +10,7 @@ ITEM.CanSpawn = true
 ITEM.LookAt = vector_origin
 ITEM.CamPos = Vector(10,40,0)
 ITEM.Stackable = true
+ITEM.MaxStack = 100
 
 ITEM.Actions = {} --The actions displayed when the menu is used.
 ITEM.Actions[0] = {

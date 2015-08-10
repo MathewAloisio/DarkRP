@@ -1,7 +1,7 @@
---Dependencies: "skills", "item".
---NOTE: weapon.ItemID MUST be set when equipping a weapon.
 util.AddNetworkString("openInventoryMenu")
 util.AddNetworkString("networkInventory")
+util.AddNetworkString("startCombine")
+util.AddNetworkString("startDivide")
 local function recalculateInvWeight(player)
 	player.InvWeight = 0.0
 	for slot=0,MAX_INV_SLOTS do
@@ -94,13 +94,46 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
 			tbl.Actions[action].DoAction(player, slot)
-		elseif actions == #tbl.Actions-2 then -- Combine
-			-- TODO: Combine for quantity-based items.
-		elseif actions == #tbl.Actions-1 then -- Divide
-			-- TODO: Divide for quantity-based items.
+		elseif action == #tbl.Actions-2 and items.IsStackable(inv[ITEM_ID]) then -- Combine
+			net.Start("startCombine")
+				net.WriteDouble(inv[ITEM_ID])
+				net.WriteDouble(slot)
+			net.Send(player)
+		elseif action == #tbl.Actions-1 and items.IsStackable(inv[ITEM_ID]) then -- Divide
+			net.Start("startDivide")
+				net.WriteDouble(inv[ITEM_ID])
+				net.WriteDouble(slot)
+			net.Send(player)
 		elseif action >= #tbl.Actions then --Drop since we're on the last Action and there is no custom 'DoAction' set, assumed drop.
 			player:DropInvItem(slot)
 		end
+	end
+end)
+
+concommand.Add("divideItem", function(player, cmd, args)
+	if #args < 3 then return end
+	local slot = tonumber(args[1])
+	if player.Inv[slot][ITEM_ID] ~= tonumber(args[3]) then return end --Incase the inventory shifts while we're dividing.
+	local amt = tonumber(args[2])
+	if player.Inv[slot][ITEM_Q] < amt+1 then DarkRP.notify(player, 1, 4, string.format("You can't divide this many items out of this item-stack. Limit: %i.", player.Inv[slot][ITEM_Q]-1)) return end
+	player.Inv[slot][ITEM_Q] = player.Inv[slot][ITEM_Q] - amt --Use this instead of PLAYER:RemoveInvItem so we don't shift the inventory, AND it's faster anyways.
+	player:GiveInvItem(player.Inv[slot][ITEM_ID], amt, player.Inv[slot][ITEM_E], player.Inv[slot][ITEM_EX])
+end)
+
+concommand.Add("combineItem", function(player, cmd, args)
+	if #args < 3 then return end
+	local slotone = tonumber(args[1])
+	local slottwo = tonumber(args[2])
+	if slotone == slottwo then return end -- Can't combine a stack with itself.
+	local id = tonumber(args[3])
+	if player.Inv[slotone][ITEM_ID] ~= id or player.Inv[slottwo][ITEM_ID] ~= id then DarkRP.notify(player, 1, 4, "You can only combine items of the same type.") return end --No combining two items of different types.
+	if items.Get(id).MaxStack and (player.Inv[slotone][ITEM_Q] + player.Inv[slottwo][ITEM_Q]) > items.Get(id).MaxStack then DarkRP.notify(player, 1, 4, string.format("This item has a stack-size limit of %i items.", items.Get(id).MaxStack)) return end
+	if slotone > slottwo then -- Move the items to slotone. (prevents problems caused by fixInventory)
+		player.Inv[slotone][ITEM_Q] = player.Inv[slotone][ITEM_Q] + player.Inv[slottwo][ITEM_Q]
+		player:RemoveInvItem(_, 0, slottwo)
+	else -- Move the items to slottwo. (prevents problems caused by fixInventory)
+		player.Inv[slottwo][ITEM_Q] = player.Inv[slottwo][ITEM_Q] + player.Inv[slotone][ITEM_Q]
+		player:RemoveInvItem(_, 0, slotone)	
 	end
 end)
 
