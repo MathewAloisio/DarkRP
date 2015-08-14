@@ -78,11 +78,10 @@ function inventory.CheckInvItemEx(id) --Counts total amount of a specific item I
 			end
 		end
 	end
-	if count != 0 then return count end
+	if count ~= 0 then return count end
 	return false
 end
 
---TODO Actual inventory UI below.
 local Menu = Menu or nil
 local MenuList = MenuList or nil
 local IsOpen = IsOpen or false
@@ -128,6 +127,9 @@ local function makeItemSlot(id, slot)
 						makeItemSlot(Inv[slot][ITEM_ID], slot)
 					end
 				end)
+			end
+			if tbl.ShowInfo ~= nil then --"Info" button.
+				menu:AddOption("Info", function() tbl:ShowInfo(slot) end)
 			end
 			menu:Open()
 		end

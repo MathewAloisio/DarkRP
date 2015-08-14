@@ -102,5 +102,11 @@ ITEM.Args = { -- For variables that are specific to this item-type only.
 	--Example2 = true
 }
 
+if CLIENT then
+	function ITEM:ShowInv(slot) --Automatically generates an "Info" button when using the item in your inv, this is called when it's clicked.
+		local inv = inventory.Get(slot)
+	end
+end
+
 items.Register(ITEM)
 ```
