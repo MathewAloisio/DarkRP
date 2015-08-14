@@ -251,12 +251,35 @@ end)
 --Blacklist sound ent option.
 properties.Add( "blocksoundent", 
 {
-	MenuLabel =	"Toggle SoundURL",
+	MenuLabel =	"Disable URL-streaming",
 	Order =	999,
-	MenuIcon = "icon16/wrench.png",
+	MenuIcon = "icon16/cross.png",
 	
 	Filter = function( self, entity, player )
 		if entity.soundOn == nil then return false end
+		if table.HasValue(blockedSoundEnts, entity) then return false end
+		return true
+	end,
+	Action = function( self, entity )
+		table.insert(blockedSoundEnts, entity)
+		for i, v in pairs(soundURLs) do
+			if v.parent ~= nil and v.parent == entity then
+				soundurl.StopStream(i)
+			end
+		end
+		chat.AddText(Color(255, 0, 50), "Entity added to blocked sound-entity list.")
+	end
+} )
+
+properties.Add( "allowsoundent", 
+{
+	MenuLabel =	"Allow URL-streaming",
+	Order =	999,
+	MenuIcon = "icon16/tick.png",
+	
+	Filter = function( self, entity, player )
+		if entity.soundOn == nil then return false end
+		if not table.HasValue(blockedSoundEnts, entity) then return false end
 		return true
 	end,
 	Action = function( self, entity )
@@ -264,16 +287,11 @@ properties.Add( "blocksoundent",
 			if v == entity then
 				table.remove(blockedSoundEnts, i)
 				updateSoundEntity(entity)
-				LocalPlayer():ChatPrint("Entity removed from the blocked sound-entity list.")
+				chat.AddText(Color(50, 255, 0), "Entity removed from the blocked sound-entity list.")
 				return
 			end
 		end
-		table.insert(blockedSoundEnts, entity)
-		for i, v in pairs(soundURLs) do
-			if v.parent ~= nil and v.parent == entity then
-				soundurl.StopStream(i)
-			end
-		end
-		LocalPlayer():ChatPrint("Entity added to blocked sound-entity list.")
 	end
 } )
+
+hook.Add("Initialize", "SOUNDURL::Initialize", function() AddHint(string.format("Did you know you can disable URL-streaming for a specific object by holding '%s', right clicking it, and selecting 'Disable/Allow URL-streaming'?", string.upper(input.LookupBinding("+menu_context")))) end)
