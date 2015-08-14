@@ -294,4 +294,13 @@ properties.Add( "allowsoundent",
 	end
 } )
 
-hook.Add("Initialize", "SOUNDURL::Initialize", function() AddHint(string.format("Did you know you can disable URL-streaming for a specific object by holding '%s', right clicking it, and selecting 'Disable/Allow URL-streaming'?", string.upper(input.LookupBinding("+menu_context")))) end)
+hook.Add("Initialize", "SOUNDURL::Initialize", function() 
+	local cmenu = input.LookupBinding("+menu_context")
+	if cmenu ~= nil then 
+		cmenu = string.upper(cmenu)
+	else
+		cmenu = "not bound[+menu_context]"
+		timer.Simple(15, function() chat.AddText(Color(255, 0, 0), "[NOTICE] Your context menu isn't bound! Type 'bind [key] +menu_context' in console to bind it to a key. (It is used for some per-entity settings.)") end)
+	end
+	AddHint(string.format("Did you know you can disable URL-streaming for a specific object by holding '%s', right clicking it, and selecting 'Disable/Allow URL-streaming'?", cmenu)) 
+end)
