@@ -51,19 +51,21 @@ hook.Add("PlayerInitialSpawn", "RADIO::InitialSpawn", function(player)
 	net.Start("RADIO:UpdateStations")
 		net.WriteTable(radioStations)
 	net.Send(player)
-	for _,entity in pairs(ents.GetAll()) do -- sync all sound-ent info.
-		if entity.soundSync == nil then continue end --Server detects this as a non-sound entity, so don't bother trying to sync it, skip this iteration.
-		net.Start("SOUNDURL::RegisterEntity")
-			net.WriteEntity(entity)
-			net.WriteBool(entity.soundSync)
-		net.Send(player)
-		if entity.soundURL ~= nil then
-			net.Start("SOUNDURL::UpdateEntityURL")
-				net.WriteEntity(entity)
-				net.WriteString(entity.soundURL)
+	timer.Simple(1, function()
+		for _,entity in pairs(ents.GetAll()) do -- sync all sound-ent info.
+			if entity.soundSync == nil then continue end --Server detects this as a non-sound entity, so don't bother trying to sync it, skip this iteration.
+			net.Start("SOUNDURL::RegisterEntity")
+				net.WriteDouble(entity:EntIndex())
+				net.WriteBool(entity.soundSync)
 			net.Send(player)
+			if entity.soundURL ~= nil then
+				net.Start("SOUNDURL::UpdateEntityURL")
+					net.WriteDouble(entity:EntIndex())
+					net.WriteString(entity.soundURL)
+				net.Send(player)
+			end
 		end
-	end
+	end)
 end)
 
 hook.Add("Initialize", "RADIO::Initialize", function()
@@ -102,7 +104,7 @@ function ENTITY:RegisterSoundEnt(sync)
 	self.soundSync = sync
 	timer.Simple(0.1, function()
 		net.Start("SOUNDURL::RegisterEntity")
-			net.WriteEntity(self)
+			net.WriteDouble(self:EntIndex())
 			net.WriteBool(sync)
 		net.Broadcast()
 	end)
@@ -111,7 +113,7 @@ end
 function ENTITY:SetSoundURL(url)
 	self.soundURL = url
 	net.Start("SOUNDURL::UpdateEntityURL")
-		net.WriteEntity(self)
+		net.WriteDouble(self:EntIndex())
 		net.WriteString(url)
 	net.Broadcast()
 end
@@ -120,7 +122,7 @@ function ENTITY:ToggleSoundURL(on)
 	self:SetNWBool("soundURLOn", on)
 	timer.Simple(0.1, function()
 		net.Start("SOUNDURL::RefreshSoundURL")
-			net.WriteEntity(self)
+			net.WriteDouble(self:EntIndex())
 		net.Broadcast()
 	end)
 end

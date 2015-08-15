@@ -272,6 +272,8 @@ GM.Config.falldamageamount				= 10
 GM.Config.printeroverheatchance			= 22
 -- jumppower - The base jump-power that the "acrobatics" skill will be based off of.
 GM.Config.jumppower				        = 200
+-- Allows superadmins+ to spawn vehicles.
+GM.Config.adminvehicles 				= 2
 
 --[[---------------------------------------------------------------------------
 Other settings

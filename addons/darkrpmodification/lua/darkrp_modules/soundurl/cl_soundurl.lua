@@ -69,7 +69,7 @@ function soundurl.PlayStream(url, flags, callback, parent, noplay)
 	if #soundURLs > (maxSoundURLs-1) then return -1 end --Don't play it if we're at our limit.
 	local failed = 0
 	sound.PlayURL(url, flags, function(stream)
-		if stream:IsValid() then
+		if stream and stream:IsValid() then
 			if callback ~= nil then callback(stream) end
 			local tbl = {stream = stream, url = url}
 			if parent ~= nil then tbl.parent = parent end
@@ -78,6 +78,7 @@ function soundurl.PlayStream(url, flags, callback, parent, noplay)
 				stream:Play()
 			end
 		else
+			MsgC(Color(255, 0, 30), string.format("[SoundURL] Failed to start URL stream, most likely the URL is invalid or not a direct link.\nURL: %q", url))
 			failed = 1
 			return
 		end
@@ -204,37 +205,43 @@ hook.Add("NetworkEntityCreated", "SOUNDURL::EntityCreated", function(entity)
 end)
 
 net.Receive("SOUNDURL::UpdateEntityURL", function(len)
-	local entity = net.ReadEntity()
+	local entity = ents.GetByIndex(net.ReadDouble())
 	if not IsValid(entity) then return end
 	entity.soundURL = net.ReadString()
 	updateSoundEntity(entity)
 end)
 
 net.Receive("SOUNDURL::RegisterEntity", function(len)
-	local entity = net.ReadEntity()
+	local entity = ents.GetByIndex(net.ReadDouble())
 	if not IsValid(entity) then return end
 	soundurl.RegisterEntity(entity, net.ReadBool())
 end)
 
 net.Receive("SOUNDURL::RefreshSoundURL", function(len) 
-	local entity = net.ReadEntity()
+	local entity = ents.GetByIndex(net.ReadDouble())
 	if not IsValid(entity) then return end
 	updateSoundEntity(entity) 
 end)
 
 local lastRefresh = lastRefresh or 0
 hook.Add("Think", "SOUNDURL::Think", function() --sync/refresh streams
+	local canRefresh = lastRefresh <= CurTime()
 	for i,v in pairs(soundURLs) do
 		if v.parent ~= nil then
 			local pos
 			if v.parent:IsValid() and v.parent.soundSync == true and v.stream:IsValid() then
-				pos = v.parent:GetPos()
-				v.stream:SetPos(pos)
+				local vehicle = LocalPlayer():GetVehicle()
+				if IsValid(vehicle) and (v.parent == vehicle or (IsValid(vehicle:GetParent()) and v.parent == vehicle:GetParent())) then
+					v.stream:SetPos(LocalPlayer():GetPos())
+				else
+					pos = v.parent:GetPos()
+					v.stream:SetPos(pos)
+				end
 			elseif not v.parent:IsValid() then
 				soundurl.StopStream(i)
 				continue
 			end
-			if lastRefresh <= CurTime() and v.parent.soundOn == true and LocalPlayer():GetPos():Distance(pos) > 800 then
+			if canRefresh == true and pos ~= nil and v.parent.soundOn == true and LocalPlayer():GetPos():Distance(pos) > 800 then
 				soundurl.StopStream(i)
 				if v.parent:GetNWBool("soundURLOn", false) == true then
 					soundurl.MakeEntRefresh(v.parent)
@@ -242,7 +249,7 @@ hook.Add("Think", "SOUNDURL::Think", function() --sync/refresh streams
 			end
 		end
 	end
-	if lastRefresh <= CurTime() then --refresh entities that WERE out of range.
+	if canRefresh then --refresh entities that WERE out of range.
 		for _,entity in pairs(refreshSoundEnts) do updateSoundEntity(entity) end
 		lastRefresh = CurTime() + 4 --refresh out-of-range sound-entities every 4 seconds.
 	end
@@ -252,7 +259,7 @@ end)
 properties.Add( "blocksoundent", 
 {
 	MenuLabel =	"Disable URL-streaming",
-	Order =	999,
+	Order =	10,
 	MenuIcon = "icon16/cross.png",
 	
 	Filter = function( self, entity, player )
@@ -267,14 +274,14 @@ properties.Add( "blocksoundent",
 				soundurl.StopStream(i)
 			end
 		end
-		chat.AddText(Color(255, 0, 50), "Entity added to blocked sound-entity list.")
+		chat.AddText(Color(255, 0, 50), "Entity added to blocked sound-entity list. (This only effects you.)")
 	end
 } )
 
 properties.Add( "allowsoundent", 
 {
 	MenuLabel =	"Allow URL-streaming",
-	Order =	999,
+	Order =	10,
 	MenuIcon = "icon16/tick.png",
 	
 	Filter = function( self, entity, player )
@@ -287,7 +294,7 @@ properties.Add( "allowsoundent",
 			if v == entity then
 				table.remove(blockedSoundEnts, i)
 				updateSoundEntity(entity)
-				chat.AddText(Color(50, 255, 0), "Entity removed from the blocked sound-entity list.")
+				chat.AddText(Color(50, 255, 0), "Entity removed from the blocked sound-entity list. (This only effects you.)")
 				return
 			end
 		end
