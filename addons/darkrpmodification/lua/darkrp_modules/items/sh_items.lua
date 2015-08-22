@@ -23,16 +23,21 @@ function items.IsStackable(id)
 	return ItemList[id].Stackable or false
 end
 
-function items.Register(tbl)
-	if !tbl or tbl.ID == nil then MsgN("[ERROR] no 'tbl.ID' sent to 'items.Register'.") return end
-	ItemList[tbl.ID] = tbl
-end
+do
+	local files = file.Find("darkrp_modules/items/items/*.lua", "LUA")
 
-local files = file.Find("darkrp_modules/items/items/*.lua", "LUA")
-for _,v in pairs(files) do
-	if SERVER then
-		AddCSLuaFile(string.format("darkrp_modules/items/items/%s", v))
+	function items.Register(tbl)
+		if !tbl or tbl.ID == nil then ErrorNoHalt("[ERROR] no 'tbl.ID' sent to 'items.Register'.\n") return end
+		if !tbl or tbl.ID == nil then ErrorNoHalt("[ERROR] no 'tbl.ID' sent to 'items.Register'.\n") return end
+		if ItemList[tbl.ID] ~= nil then ErrorNoHalt(string.format("[WARNING] items.Register failed: Reason - Duplicate 'ITEM.ID'.\n[DEBUG] Failed to register Item[%q](%i) because Item[%q](%i) already exists!\n[SOLUTION] Fix this by changing Item[%q]'s or Item[%s]'s ID to %i.\n**NOTE: Change the ID of the item that was most recently made.**\n",tbl.Name,tbl.ID,ItemList[tbl.ID].Name,tbl.ID,tbl.Name,ItemList[tbl.ID].Name,(ItemList[#files] == nil and #files) or #files+1)) return end
+		ItemList[tbl.ID] = tbl
 	end
-	include(string.format("darkrp_modules/items/items/%s", v))
-	MsgN(string.format("Item loaded: %s", v))
+
+	for _,v in pairs(files) do
+		if SERVER then
+			AddCSLuaFile(string.format("darkrp_modules/items/items/%s", v))
+		end
+		include(string.format("darkrp_modules/items/items/%s", v))
+		MsgN(string.format("Item loaded: %s", v))
+	end
 end

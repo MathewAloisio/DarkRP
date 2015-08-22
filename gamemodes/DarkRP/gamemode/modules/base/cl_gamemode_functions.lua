@@ -63,4 +63,9 @@ local function OnChangedTeam(um)
 end
 usermessage.Hook("OnChangedTeam", OnChangedTeam)
 
-timer.Simple(0, function() GAMEMODE.ShowTeam = DarkRP.openKeysMenu end)
+function GM:ShowTeam()
+	local entity = LocalPlayer():GetEyeTrace().Entity
+	if not IsValid(entity) or not entity:isKeysOwnable() or entity:GetPos():Distance(LocalPlayer():GetPos()) > 200 then return end
+	DarkRP.openKeysMenu()
+	return true
+end

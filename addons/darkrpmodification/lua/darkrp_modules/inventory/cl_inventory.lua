@@ -179,20 +179,6 @@ net.Receive("networkInventory", function(len)
 	if CombineInv ~= nil then CombineInv.inventory.Rebuild() end
 end)
 
-net.Receive("openInventoryMenu", function(len, ply)
-	if IsOpen == false then
-		if CombineInv ~= nil then return end -- Can't open while combining
-		if getBanking() ~= nil then return end -- Can't open while banking
-		Menu:MoveTo(ScrW()-defines.ScreenScale(440),ScrH()-500,0.2,0,1) --453 was orig.
-		gui.EnableScreenClicker(true)
-		IsOpen = true
-	elseif IsOpen == true then
-		Menu:MoveTo(ScrW(),ScrH()-500,0.2,0,1)
-		IsOpen = false
-		gui.EnableScreenClicker(false)
-	end
-end)
-
 hook.Add("Initialize", "buildInventory", function()
 	if not IsValid(Menu) then
 		createInventory()
@@ -264,4 +250,20 @@ net.Receive("startCombine", function(len)
 		draw.RoundedBox(4, 0, 0, CombineInv.inventory.list:GetWide(), CombineInv.inventory.list:GetTall(), Color(GetConVarNumber("Healthbackground1"), GetConVarNumber("Healthbackground2"), GetConVarNumber("Healthbackground3"), GetConVarNumber("Healthbackground4")))
 	end	
 	CombineInv.inventory.Rebuild()
+end)
+
+hook.Add("ShowTeam", "Inventory::OpenMenu", function()
+	local entity = LocalPlayer():GetEyeTrace().Entity
+	if IsValid(entity) and entity:isKeysOwnable() and entity:GetPos():Distance(LocalPlayer():GetPos()) < 200 then return end
+	if IsOpen == false then
+		if CombineInv ~= nil then return end -- Can't open while combining
+		if getBanking() ~= nil then return end -- Can't open while banking
+		Menu:MoveTo(ScrW()-defines.ScreenScale(440),ScrH()-500,0.2,0,1) --453 was orig.
+		gui.EnableScreenClicker(true)
+		IsOpen = true
+	elseif IsOpen == true then
+		Menu:MoveTo(ScrW(),ScrH()-500,0.2,0,1)
+		IsOpen = false
+		gui.EnableScreenClicker(false)
+	end
 end)

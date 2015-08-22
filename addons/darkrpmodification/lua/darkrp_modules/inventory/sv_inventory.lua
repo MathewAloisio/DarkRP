@@ -78,7 +78,7 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 		local tbl = items.Get(inv[ITEM_ID])
 		if tbl == nil then MsgN(string.format("[ERROR] Item[%i] not found. Called by [rp_invaction].", inv[ITEM_ID])) return end
 		if (tbl.ShowOption ~= nil and tbl.ShowOption(player) == false) then return end --direct-concommand abuse protection. (this means we need an equivalent ShowOption serverside and clientside.)
-		if action == 0 then
+		if action == 0 then --Where we handle automated Action[0] parsing.
 			if tbl.Type == ITYPE_WEAPON then
 				if player:HasWeapon(tbl.WepClass) then DarkRP.notify(player, 1, 4, "You already have this weapon equipped!") return end
 				local wep = player:Give(tbl.WepClass)
@@ -88,8 +88,13 @@ concommand.Add("rp_invaction", function(player, cmd, args)
 				wep.ItemID = tbl.ID
 				if tbl.Actions[0].DoAction then tbl.Actions[0].DoAction(player, slot) end
 				return
+			elseif tbl.Type == ITYPE_CLOTHING then
+				if tbl.ClothingID == nil then ErrorNoHalt(string.format("Item[%s](%i) has Type set to ITYPE_CLOTHING but no corresponding ITEM.ClothingID was defined!")) return end
+				player:RemoveInvItem(_, 1, slot)
+				player:WearClothing(tbl.ClothingID)
+				DarkRP.notify(player, 2, 4, string.format("%s equipped!", tbl.Name))
+				return
 			end
-			--TODO: Add other custom types like food.
 		end
 		if not tbl.Actions[action] then MsgN(string.format("[ERROR] Invalid action[%i] called for Item[%i].", action, inv[ITEM_ID])) return end
 		if tbl.Actions[action].DoAction then
@@ -311,8 +316,3 @@ function PLAYER:DropInvItem(slot,force)
 	end
 	return true
 end
-
-hook.Add("ShowTeam", "Inventory::OpenMenu", function(player)
-	net.Start("openInventoryMenu")
-	net.Send(player)
-end)

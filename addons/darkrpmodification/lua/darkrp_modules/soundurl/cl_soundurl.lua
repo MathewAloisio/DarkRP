@@ -311,3 +311,7 @@ hook.Add("Initialize", "SOUNDURL::Initialize", function()
 	end
 	AddHint(string.format("Did you know you can disable URL-streaming for a specific object by holding '%s', right clicking it, and selecting 'Disable/Allow URL-streaming'?", cmenu)) 
 end)
+
+--TODO: UI below. (Don't forget we are returning the URL from the selected station/direct-URL.)
+
+

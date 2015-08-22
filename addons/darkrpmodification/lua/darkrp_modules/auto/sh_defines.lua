@@ -20,6 +20,16 @@ ICLASS_PRIMARY = 2
 ICLASS_SECONDARY = 3
 ICLASS_MELEE = 4
 
+-- Clothing slots
+SLOT_HEAD = 0
+SLOT_EYES = 1
+SLOT_SHOULDERS = 2
+SLOT_CHEST = 3
+SLOT_LEGS = 4
+SLOT_FEET = 5 
+
+TOTAL_CLOTHING_SLOTS = 5 -- (= Value of the last SLOT_ declaration.)
+
 -- Modifier types
 MOD_WEIGHT = 0
 MOD_SPEED = 1

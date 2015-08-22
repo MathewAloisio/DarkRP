@@ -22,7 +22,7 @@ hook.Add("PlayerInitialSpawn", "loadDonate", function(player)
 		player.DonateTime = tbl.date
 		player.DonateExpire = 0
 		if tbl.rank > 0 then
-			player.DonateExpire = os.difftime(tbl.date, os.time())
+			player.DonateExpire = os.difftime(os.time(), tbl.date)
 			local dl = player:DonateDaysLeft()
 			if dl > 0 then --Not yet expired.
 				player:PrintMessage(HUD_PRINTTALK, string.format("Welcome back! you're a %s donator and your rank is set to expire in %d days.", defines.TranslateDonate(tbl.rank), dl))
@@ -57,7 +57,7 @@ function PLAYER:SetDonate(rank)
 	local t = os.time()
 	if self.Donate > 0 then --If they're already a donor add their time-left.
 		self.DonateTime = (t - defines.DaysToSeconds(self:DonateDaysLeft())) --Inefficient but who cares?
-		self.DonateExpire = os.difftime(self.DonateTime, t)
+		self.DonateExpire = os.difftime(t, self.DonateTime)
 	else --else give them the normal 30 days.
 		self.DonateTime = t
 		self.DonateExpire = 0

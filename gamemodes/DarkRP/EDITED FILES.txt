@@ -1,0 +1,9 @@
+================================== IMPORTANT ==================================
+		THIS IS A LIST OF THE FILES THAT HAVE BEEN EDITED
+		IN THE GAMEMODE... WHEN UPDATING DARKRP READ THIS!
+================================== IMPORTANT ==================================
+
+1. cl_gamemode_functions.lua
+	-timer.Simple(0, function() GAMEMODE.ShowTeam = DarkRP.openKeysMenu end)
+		replaced with:
+	-hook.Add("ShowTeam", "DarkRP::openKeysMenu", function() ... end)
