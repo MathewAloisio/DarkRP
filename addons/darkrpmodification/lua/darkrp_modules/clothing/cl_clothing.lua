@@ -5,7 +5,7 @@ local function legacyScale(ent, scale)
 			for bone=0,ent:GetBoneCount() do
 				local matrix = ent:GetBoneMatrix(bone)
 				if matrix then
-					matrix:SetScale(scale or Vector(1,1,1))
+					matrix:Scale(scale or Vector(1,1,1))
 					ent:SetBoneMatrix(bone, matrix)
 				end
 			end
@@ -52,11 +52,13 @@ do --Clothing editor
 
 	local sliders
 	local parentBone = parentBone or "ValveBiped.Bip01_Pelvis"
+	local currentSkin = currentSkin or 0
 	local ClothingCam = ClothingCam or Vector(0,0,0)
 	local selectedIndex = selectedIndex or -1
 	local offsets = offsets or {}
 
 	local function RemoveInstance(ind)
+		if not IsValid(offsets[ind].VisualModel) then return end
 		sliders.instanceList:Clear()
 		offsets[ind].VisualModel:Remove()
 		table.remove(offsets,ind)
@@ -72,48 +74,26 @@ do --Clothing editor
 		end
 	end
 
-	local bufrTable
-	local function CopyItems()
-		local t = {}
-
-		for _,v in ipairs(offsets) do
-			PrintTable(v)
-			local t2 = {Bone = v.Bone,Pos = Vector(v.Pos.x,v.Pos.y,v.Pos.z),Ang = Angle(v.Ang.pitch,v.Ang.yaw,v.Ang.roll),Scale = v.Scale,Model = v.Model}
-			table.insert(t,t2)
-		end
-		bufrTable = t
-		print("Buffered Table")
-		PrintTable(t)
-	end
-	local function PasteItems()
-		offsets = bufrTable
-		sliders.instanceList:Clear()
-		for i,v in pairs(offsets) do
-			local mdlPath = v.Model
-			local mdl = ClientsideModel(mdlPath,RENDERGROUP_OPAQUE)
-				
-			offsets[i].VisualModel = mdl
-			local id = i
-			
-			sliders.instanceList:AddChoice("Instance "..id, {Model = mdl, Index = id})
-		end
-		bufrTable = nil
-	end
-		
-
-
 	local function UpdateDoll()
 		for i,Value in pairs(offsets) do
 			local CachedBoneID = g_Doll:LookupBone(Value.Bone)
 			if CachedBoneID != -1 && IsValid(Value.VisualModel) then
 				local matrix = g_Doll:GetBoneMatrix(CachedBoneID)
 
-				matrix:SetAngles((Value.Ang or Angle(0,0,0)) + matrix:GetAngles())
-				matrix:SetTranslation((Value.Pos or Vector(0,0,0)) + matrix:GetTranslation())
+				legacyScale(Value.VisualModel, Value.Scale or Vector(1,1,1))
+				
+				matrix:Rotate(Value.Ang or Angle(0,0,0))
+				matrix:Translate(Value.Pos or Vector(0,0,0))
 				
 				Value.VisualModel:SetPos(matrix:GetTranslation())
 				Value.VisualModel:SetAngles(matrix:GetAngles())
-				legacyScale(Value.VisualModel, Value.Scale or Vector(1,1,1))
+				
+				if Value.VisualModel:GetSkin() ~= Value.Skin then
+					Value.VisualModel:SetSkin(Value.Skin or 0)
+				end
+				if Value.VisualModel:GetMaterial() ~= Value.Material then
+					Value.VisualModel:SetMaterial(Value.Material)
+				end
 			end
 		end
 	end
@@ -131,12 +111,14 @@ do --Clothing editor
 	local function AddVisualInstance(mdlPath)
 		--if !util.IsValidModel(mdlPath) then ErrorNoHalt("Model Not Valid") return end
 		local mdl = ClientsideModel(mdlPath,RENDERGROUP_OPAQUE)
-		local t = {Bone = parentBone, Pos = Vector(0,0,0), Ang = Angle(0,0,0), Scale = Vector(1,1,1), Model = mdlPath, VisualModel = mdl}			
+		local t = {Bone = parentBone, Pos = Vector(0,0,0), Ang = Angle(0,0,0), Scale = Vector(1,1,1), Model = mdlPath, Skin = 0, Material = mdl:GetMaterial(), VisualModel = mdl}			
 		local id = table.insert(offsets,t)
 		
-		sliders.instanceList:AddChoice("Model "..id, {Model = mdl, Index = id})
+		local choiceID = sliders.instanceList:AddChoice("Model "..id, {Model = mdl, Index = id})
+		sliders.instanceList:ChooseOptionID(choiceID)
 	end
 
+	local noChange = false
 	local SLIDERS = {}
 	function SLIDERS:Init()
 		self:SetTitle("Clothing Editor")
@@ -144,18 +126,19 @@ do --Clothing editor
 		self:SetKeyboardInputEnabled(true)
 		
 		self.Form = vgui.Create("DForm",self)
+		self.Form:SetKeyboardInputEnabled(true)
 		self.Form:SetWide(190)
 		self.Form:SetPos(5,25)
 		self.Form:SetName("Clothing Editor!")
 		
-		self.itemList = self.Form:ComboBox("Visual Models")
+		self.itemList = self.Form:ComboBox("Clothing IDs")
 		self.itemList:SetTall(100)
 		for i,v in pairs(clothing.GetAll()) do
-			self.itemList:AddChoice(i, v)
+			self.itemList:AddChoice(i)
 		end
 		
 		self.itemList.OnSelect = function(panel, index, value)
-			self:SetItem(clothing.Get(value).ClothingData)
+			self:SetItem(clothing.GetData(value))
 		end
 		
 		
@@ -166,8 +149,36 @@ do --Clothing editor
 			self.bones:AddChoice(v)
 		end
 		
+		self.skinList = self.Form:ComboBox("Skin")
+		self.skinList.OnSelect = function(panel, index, value) self:SetSkin(value) end
+		self.skinList:AddChoice("0")
+		
 		self.instanceList = self.Form:ComboBox("Item")
 		self.instanceList:SetTall(100)
+		
+		self.SetMatButt = self.Form:Button("Set Model Material")
+		self.SetMatButt.DoClick = function()
+			if offsets[selectedIndex] == nil or not IsValid(offsets[selectedIndex].VisualModel) then return end
+			Derma_StringRequest( "Enter the material path", 
+				"Example: models/props_combine/tprings_globe", 
+				"", 
+				function( strTextOut )
+					if strTextOut == "" then 
+						self:SetMaterial()
+					else
+						self:SetMaterial(strTextOut) 
+					end
+				end,
+				function( strTextOut ) end,
+				"Add", 
+				"Cancel" )
+		end
+		
+		self.ResMatButt = self.Form:Button("Reset Model Material")
+		self.ResMatButt.DoClick = function()
+			if offsets[selectedIndex] == nil or not IsValid(offsets[selectedIndex].VisualModel) then return end
+			self:SetMaterial()
+		end
 		
 		self.AddInstance = self.Form:Button("Add Visual Model")
 		self.AddInstance.DoClick = function()
@@ -243,13 +254,14 @@ do --Clothing editor
 			noChange = false
 			self.SZ:SetValue(offsets[index].Scale.z or 1)
 			self.bones:SetValue(offsets[index].Bone)
+			self:RebuildSkinList()
 		end
 		
 		self.dump = self.Form:Button("Dump Code to Clipboard!")
 		self.dump.DoClick = function() self:Dump() end
 		
 	end
-	local noChange = false
+	
 	function SLIDERS:OnSliderChanged(moveType,value)
 		if not offsets[selectedIndex] then return end
 		if moveType == "MU" then
@@ -266,7 +278,7 @@ do --Clothing editor
 			Ang.pitch = value
 		elseif moveType == "SX" then
 			Scale.x = value
-		elseif moveType == "SY " then
+		elseif moveType == "SY" then
 			Scale.y = value
 		elseif moveType == "SZ" then
 			Scale.z = value
@@ -280,22 +292,48 @@ do --Clothing editor
 	function SLIDERS:Close()
 		ClothingEditorOff()
 	end
+
 	function SLIDERS:SetItem(clothingPos)
 		ClearItems()
 
 		if clothingPos then
 			offsets = table.Copy(clothingPos)
+			for index,data in pairs(offsets) do
+				local mdl = ClientsideModel(data.Model,RENDERGROUP_OPAQUE)
+				offsets[index].VisualModel = mdl
+			end
 		end
 	end
 
 	function SLIDERS:SetBone(b)
-		if !offsets[selectedIndex] then return end
+		if not offsets[selectedIndex] then return end
 		print(b)
 		parentBone = b
 		offsets[selectedIndex].Bone = parentBone
 	end
+	
+	function SLIDERS:SetMaterial(material)
+		if not offsets[selectedIndex] then return end
+		offsets[selectedIndex].Material = material
+	end
 
-
+	function SLIDERS:SetSkin(skin)
+		if not offsets[selectedIndex] then return end
+		currentSkin = skin
+		offsets[selectedIndex].Skin = currentSkin
+	end
+	
+	function SLIDERS:RebuildSkinList()
+		if not offsets[selectedIndex] or not IsValid(offsets[selectedIndex].VisualModel) then return end
+		self.skinList:Clear()
+		local skin_count = offsets[selectedIndex].VisualModel:SkinCount()-1
+		if skin_count > 0 then
+			for skin=0,skin_count do
+				self.skinList:AddChoice(tostring(skin))
+			end
+		end
+	end
+	
 	function SLIDERS:Dump()
 		local str = "if CLIENT then\n\tCLOTHING.ClothingData = {\r\n"
 		
@@ -319,7 +357,13 @@ do --Clothing editor
 			if instData.Scale then
 				sx,sy,sz = instData.Scale.x,instData.Scale.y,instData.Scale.z
 			end
-			str = str .."\t\t{Bone = \""..instData.Bone.."\", Pos = Vector("..x..","..y..","..z.."), Ang = Angle("..pitch..","..yaw..","..roll.."), Scale = Vector("..sx..","..sy..","..sz.."), Model = \""..instData.Model.."\"}"..comma.."\n"
+			if instData.Skin == nil then instData.Skin = 0 end
+			if instData.Material == nil then instData.Material = instData.VisualModel:GetMaterial() end
+			if instIndex == 1 then
+				str = str .."\t\t{Bone = \""..instData.Bone.."\", Pos = Vector("..x..","..y..","..z.."), Ang = Angle("..pitch..","..yaw..","..roll.."), Scale = Vector("..sx..","..sy..","..sz.."), Model = \""..instData.Model.."\", Skin = "..instData.Skin..", Material = \""..instData.Material.."\"}"..comma
+			else
+				str = str .."\n\t\t{Bone = \""..instData.Bone.."\", Pos = Vector("..x..","..y..","..z.."), Ang = Angle("..pitch..","..yaw..","..roll.."), Scale = Vector("..sx..","..sy..","..sz.."), Model = \""..instData.Model.."\", Skin = "..instData.Skin..", Material = \""..instData.Material.."\"}"..comma
+			end
 			num = num + 1
 		end
 		str = str .."\r\t}\nend"
@@ -410,6 +454,10 @@ net.Receive("CLOTHING::NetworkPlayer", function(len)
 		player.Clothing[slot].rendered_id = player.Clothing[slot].id
 		for i,v in pairs(getClothingData(player.Clothing[slot].id)) do
 			player.Clothing[slot].components[i] = ClientsideModel(v.Model,RENDERGROUP_OPAQUE)
+			player.Clothing[slot].components[i]:SetMaterial((v.Material ~= "" and v.Material) or nil)
+			if v.Skin ~= nil then
+				player.Clothing[slot].components[i]:SetSkin(v.Skin)
+			end
 			legacyScale(player.Clothing[slot].components[i], v.Scale or Vector(1,1,1))
 		end
 	end
@@ -432,8 +480,8 @@ hook.Add("PostPlayerDraw", "CLOTHING::RenderPlayer", function(player)
 			if boneID ~= -1 and IsValid(entity) then
 				local matrix = player:GetBoneMatrix(boneID)
 
-				matrix:SetAngles((tbl[i].Angles or Angle(0,0,0)) + matrix:GetAngles())
-				matrix:SetTranslation((tbl[i].Pos or Vector(0,0,0)) + matrix:GetTranslation())
+				matrix:Rotate(tbl[i].Angles or Angle(0,0,0))
+				matrix:Translate(tbl[i].Pos or Vector(0,0,0))
 
 				entity:SetPos(matrix:GetTranslation())
 				entity:SetAngles(matrix:GetAngles())
