@@ -7,8 +7,10 @@ ITEM.Model = "models/props_junk/gascan001a.mdl"
 ITEM.Weight = 1.5
 ITEM.Type = 0
 ITEM.CanSpawn = true 
-ITEM.LookAt = vector_origin
-ITEM.CamPos = Vector(10,40,0)
+if CLIENT then
+	ITEM.LookAt = vector_origin
+	ITEM.CamPos = Vector(10,40,0)
+end
 ITEM.Stackable = true
 ITEM.MaxStack = 100
 

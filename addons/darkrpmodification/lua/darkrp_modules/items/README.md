@@ -64,13 +64,15 @@ ITEM.Model = "" --The items model.
 ITEM.Weight = 0.0 --The items weight.
 ITEM.Type = 0 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = ITYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
 ITEM.CanSpawn = true --Can this item be dropped?
-ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
-ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.
+if CLIENT then
+	ITEM.LookAt = vector_origin --For icon-adjustment in the inventory.
+	ITEM.CamPos = Vector(10,40,0) --For icon-adjustment in the inventory.
+end
 ITEM.Stackable = false --Can this item be stacked? (quantity greater than 1) [Optional]
 ITEM.MaxStack = 100 --Largest stack size possible. (Only for use w/ items where 'ITEM.Stackable == true'.)
 
 ITEM.Actions = {} --The actions displayed when the menu is used.
-ITEM.Actions[0] = { --Overridden on ITYPE_WEAPON items, however still NOT optional.
+ITEM.Actions[0] = { --Overridden on ITYPE_WEAPON and ITYPE_CLOTHING items, however still NOT optional.
 	Name = "Use",
 	ShowOption = function(player) return true end, --Optional
 	DoAction = function(player,slot) --Optional on Action[0] for ITYPE_WEAPON items ONLY.

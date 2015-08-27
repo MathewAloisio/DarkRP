@@ -8,9 +8,10 @@ ITEM.Weight = 5.0
 ITEM.Type = 6 -- 0 = ITYPE_ITEM, 1 = ITYPE_FOOD, 2 = TYPE_DRINK, 3 = ITYPE_DRUG, 4 = ITYPE_WEAPON, 5 = ITYPE_AMMO, 6 = ITYPE_CLOTHING.
 ITEM.CanSpawn = true 
 ITEM.ClothingID = 1 --The matching ClothingTbl item where CLOTHING.ID == ITEM.ClothingID
-ITEM.LookAt = vector_origin
-ITEM.CamPos = Vector(10,40,0)
-
+if CLIENT then
+	ITEM.LookAt = vector_origin
+	ITEM.CamPos = Vector(10,40,0)
+end
 ITEM.Actions = {} --The actions displayed when the menu is used. (auto-generated for clothing.)
 ITEM.Actions[0] = {
     Name = "Wear"

@@ -474,10 +474,12 @@ hook.Add("PostPlayerDraw", "CLOTHING::RenderPlayer", function(player)
 	if player.Clothing == nil then return end
 	for slot=0,TOTAL_CLOTHING_SLOTS do
 		if player.Clothing[slot].id == 0 then continue end
+		local drawPlayer = player:GetNoDraw() or false
 		local tbl = getClothingData(player.Clothing[slot].id)
 		for i,entity in pairs(player.Clothing[slot].components) do
+			if not IsValid(entity) then continue end
 			local boneID = player:LookupBone(tbl[i].Bone)
-			if boneID ~= -1 and IsValid(entity) then
+			if boneID ~= -1 then
 				local matrix = player:GetBoneMatrix(boneID)
 
 				matrix:Rotate(tbl[i].Angles or Angle(0,0,0))
@@ -486,6 +488,170 @@ hook.Add("PostPlayerDraw", "CLOTHING::RenderPlayer", function(player)
 				entity:SetPos(matrix:GetTranslation())
 				entity:SetAngles(matrix:GetAngles())
 			end
+			if LocalPlayer():GetNoDraw() == true and entity:GetNoDraw() ~= true then 
+				entity:SetNoDraw(true)
+			end
+			if drawPlayer ~= entity:GetNoDraw() then entity:SetNoDraw(drawPlayer) end --Sync NoDraw status.
 		end
 	end
+end)
+
+--UI below.
+
+do --Register VGUI
+	--TODO: Make self.targetBone = getClothingData(LocalPlayer().Clothing[slot].id).Bone while hovering over the VGUI slot for 'slot', nil when hovering over none.
+	local PANEL = {}
+	
+	AccessorFunc(PANEL, "m_fAnimSpeed", "AnimSpeed" )
+	AccessorFunc(PANEL, "Entity", "Entity" )
+	AccessorFunc(PANEL, "vCamPos", "CamPos" )
+	AccessorFunc(PANEL, "fFOV", "FOV" )
+	AccessorFunc(PANEL, "vLookatPos", "LookAt" )
+	AccessorFunc(PANEL, "colAmbientLight", "AmbientLight" )
+	AccessorFunc(PANEL, "colColor", "Color" )
+	AccessorFunc(PANEL, "bAnimated", "Animated" )
+
+	function PANEL:Init()
+		self:SetSkin("DarkRP")
+		self.DirectionalLight = {}
+		self:SetTarget(LocalPlayer())
+		self:SetFOV(70)
+		
+		self:SetText("")
+		self:SetAnimSpeed(0.5)
+		self:SetAnimated(false)
+		
+		self:SetAmbientLight(Color(50, 50, 50))
+		
+		self:SetDirectionalLight(BOX_TOP, Color(255, 255, 255))
+		self:SetDirectionalLight(BOX_FRONT, Color(255, 255, 255))
+		
+		self:SetColor(Color(255, 255, 255, 255))
+		
+		self.refreshButt = vgui.Create("DButton", self)
+		self.refreshButt:SetSize(20, 20)
+		self.refreshButt:SetPos(0, self:GetTall()-self.refreshButt:GetTall())
+		self.refreshButt:SetText("")
+		self.refreshButt:SetDrawBackground(false)
+		self.refreshButt:SetImage("icon16/arrow_undo.png")
+		self.refreshButt.DoClick = function() self:ResetCamera() end
+	end
+	
+	function PANEL:ResetCamera()
+		self:GetCamPos(Vector(0,0,0))
+		self:SetCamAngle(Angle(0,0,0))
+	end
+	
+	function PANEL:SetTarget(entity) --TODO: Figure out how to move the player into the middle of 'self'
+		if IsValid(entity) then
+			self.CamTarget = entity
+			local pos, angle = self:GetCamOrigin()
+			angle.p = 0
+			angle.r = 0
+			self:SetCamPos(angle:Forward()*80 - Vector(0,0,-10))
+			angle:RotateAroundAxis(angle:Up(), 180)
+			self:SetCamAngle(angle)
+		end
+	end
+
+	function PANEL:GetTargetBone() return self.targetBone end
+	function PANEL:SetDirectionalLight(iDirection, color) self.DirectionalLight[iDirection] = color end
+	function PANEL:SetCamAngle(angle) self.CamAngle = angle end
+	function PANEL:GetCamAngle() return self.CamAngle or Angle(0, 0, 0) end
+	
+	function PANEL:GetCamOrigin()
+		if not self.lastCamOrigin then self.lastCamOrigin = Vector(0,0,0) end
+		if not self.lastCamAngle then self.lastCamAngle = Angle(0,0,0) end
+		if IsValid(self.CamTarget) then
+			if self:GetTargetBone() ~= nil and self.CamTarget:LookupBone(self:GetTargetBone()) ~= nil then
+				self.lastCamOrigin, self.lastCamAngle = self.CamTarget:GetBonePosition(self.CamTarget:LookupBone(self:GetTargetBone()))
+				return self.lastCamOrigin, self.lastCamAngle
+			else
+				self.LastCamOrigin, self.LastCamAngle = self.CamTarget:GetPos(), self.CamTarget:GetAngles()
+				return self.CamTarget:GetPos(), self.CamTarget:GetAngles()			
+			end			
+		end
+		return self.lastCamOrigin, self.lastCamAngle
+	end
+	
+	function PANEL:PaintOver()
+	end
+	
+	local forceDraw = forceDraw or false
+	function PANEL:Paint()
+		if not IsValid(LocalPlayer()) then return end
+		forceDraw = true
+		local x, y = self:LocalToScreen(0, 0)
+		cam.Start3D(self:GetCamOrigin() + self.vCamPos, self.CamAngle, 70, x, y, self:GetWide()/1.5, self:GetTall()/1.15)
+			cam.IgnoreZ(true)
+			render.SuppressEngineLighting(true)
+			render.SetLightingOrigin(LocalPlayer():GetPos())
+			render.ResetModelLighting(self.colAmbientLight.r/255, self.colAmbientLight.g/255, self.colAmbientLight.b/255)
+			render.SetColorModulation(self.colColor.r/255, self.colColor.g/255, self.colColor.b/255)
+			render.SetBlend(self.colColor.a/255)
+			
+			for i=0,6 do
+				local col = self.DirectionalLight[i]
+				if col ~= nil then
+					render.SetModelLighting(i, col.r/255, col.g/255, col.b/255)
+				end
+			end
+			
+			LocalPlayer():DrawModel()
+				
+			render.SuppressEngineLighting(false)
+			cam.IgnoreZ(false)
+		cam.End3D()
+		forceDraw = false
+	end
+	
+	local distance = distance or -80
+	local offset = offset or -10
+	local target, pos, angle
+	function PANEL:OnCursorMoved(x, y)
+		pos, angle = self:GetCamOrigin()
+		angle.p = 0
+		angle.r = 0
+		if input.IsMouseDown(MOUSE_RIGHT) and input.IsMouseDown(MOUSE_LEFT) then
+			offset = (self:GetTall()/ 2 - y)/8 - 10
+			self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset))
+		elseif input.IsMouseDown(MOUSE_LEFT) then
+			angle:RotateAroundAxis(angle:Up(), math.NormalizeAngle(180 - ( x - self:GetWide()/ 2 ) / 2 ))
+			angle:RotateAroundAxis(angle:Right(), math.NormalizeAngle(0 - ( y - self:GetTall()/ 2 ) / 2 ))
+			self:SetCamPos(angle:Forward() * distance - Vector(0,0,offset))
+			self:SetCamAngle(angle)
+		elseif input.IsMouseDown(MOUSE_RIGHT) then
+			distance =  math.min(( y - self:GetTall()/ 2 ) - 80, 0)
+			self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset) )
+		end
+	end	
+	
+	function PANEL:OnFocusChanged(gained) if gained == false then forceDraw = false end end
+	function PANEL:Close()
+		forceDraw = false
+		self:Remove()
+	end
+	derma.DefineControl("ClothingPanel", "A panel showing the players model and clothing.", PANEL, "DButton")
+	
+	hook.Add("ShouldDrawLocalPlayer", "CLOTHING::DrawLocalPlayer", function(player) if forceDraw == true then return true end end)
+end
+
+local function buildClothingPanel()
+	local tab = vgui.Create("DPanel")
+	tab:StretchToParent(5,5,5,5)
+	tab:SetSkin("DarkRP")
+	tab.Paint = function() draw.RoundedBox(8, 0, 0, tab:GetWide(), tab:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), GetConVarNumber("background4"))) end
+	tab.character = vgui.Create("ClothingPanel", tab)
+	tab.character:SetSize(tab:GetWide()/2.25, tab:GetTall())
+	tab.character:SetPos((tab:GetWide()-tab.character:GetWide())+2.5, tab.y)
+	tab.character.PaintOver = function()
+		surface.SetDrawColor(GetConVarNumber("Healthforeground1"), GetConVarNumber("Healthforeground2"), GetConVarNumber("Healthforeground3"), GetConVarNumber("Healthforeground4"))
+		surface.DrawLine(0, 0, 0, tab:GetTall())
+	end
+	return tab
+end
+
+hook.Add("F4MenuTabs", "CLOTHING::AddTab", function()
+	local tabNr = DarkRP.addF4MenuTab("Clothes", buildClothingPanel())
+	DarkRP.switchTabOrder(tabNr, 2)	
 end)

@@ -56,5 +56,5 @@ end
  
 hook.Add("F4MenuTabs", "Skills::AddTab", function()
 	local tabNr = DarkRP.addF4MenuTab("Skills", buildSkillsTab())
-	DarkRP.switchTabOrder(tabNr, 2)
+	DarkRP.switchTabOrder(tabNr, 3)
 end)
