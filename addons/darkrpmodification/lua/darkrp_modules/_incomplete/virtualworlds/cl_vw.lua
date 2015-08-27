@@ -1,7 +1,9 @@
+--NOTE: Doors are our problem... SetKeyValue maybe? some shared thinking... figure it out!
 local function refreshVirtualEntity(entity)
 	if entity:GetVW() == -1 then return end
 	if entity:GetVW() ~= LocalPlayer():GetVW() and entity.not_rendered == nil then
 		entity.not_rendered = true
+		if entity.RenderOverride ~= nil then entity.ogRO = entity.RenderOverride end
 		entity.RenderOverride = function() end
 		entity:SetCollisonGroup(10)
 		entity:DrawShadow(false)
@@ -12,7 +14,7 @@ local function refreshVirtualEntity(entity)
 		end
 	elseif entity.not_rendered ~= nil and entity.not_rendered == true then
 		entity.not_rendered = nil
-		entity.RenderOverride = nil
+		entity.RenderOverride = entity.ogRO or nil
 		entity:SetCollisionGroup(entity.cg)
 		entity:MarkShadowAsDirty()
 		entity:DrawShadow(true)

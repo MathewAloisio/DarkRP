@@ -129,7 +129,7 @@ do --Clothing editor
 		self.Form:SetKeyboardInputEnabled(true)
 		self.Form:SetWide(190)
 		self.Form:SetPos(5,25)
-		self.Form:SetName("Clothing Editor!")
+		self.Form:SetName("Clothing Editor")
 		
 		self.itemList = self.Form:ComboBox("Clothing IDs")
 		self.itemList:SetTall(100)
@@ -537,11 +537,6 @@ do --Register VGUI
 		self.refreshButt.DoClick = function() self:ResetCamera() end
 	end
 	
-	function PANEL:ResetCamera()
-		self:GetCamPos(Vector(0,0,0))
-		self:SetCamAngle(Angle(0,0,0))
-	end
-	
 	function PANEL:SetTarget(entity) --TODO: Figure out how to move the player into the middle of 'self'
 		if IsValid(entity) then
 			self.CamTarget = entity
@@ -567,7 +562,7 @@ do --Register VGUI
 				self.lastCamOrigin, self.lastCamAngle = self.CamTarget:GetBonePosition(self.CamTarget:LookupBone(self:GetTargetBone()))
 				return self.lastCamOrigin, self.lastCamAngle
 			else
-				self.LastCamOrigin, self.LastCamAngle = self.CamTarget:GetPos(), self.CamTarget:GetAngles()
+				self.lastCamOrigin, self.lastCamAngle = self.CamTarget:GetPos(), self.CamTarget:GetAngles()
 				return self.CamTarget:GetPos(), self.CamTarget:GetAngles()			
 			end			
 		end
@@ -605,26 +600,38 @@ do --Register VGUI
 		forceDraw = false
 	end
 	
-	local distance = distance or -80
-	local offset = offset or -10
-	local target, pos, angle
-	function PANEL:OnCursorMoved(x, y)
-		pos, angle = self:GetCamOrigin()
-		angle.p = 0
-		angle.r = 0
-		if input.IsMouseDown(MOUSE_RIGHT) and input.IsMouseDown(MOUSE_LEFT) then
-			offset = (self:GetTall()/ 2 - y)/8 - 10
-			self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset))
-		elseif input.IsMouseDown(MOUSE_LEFT) then
-			angle:RotateAroundAxis(angle:Up(), math.NormalizeAngle(180 - ( x - self:GetWide()/ 2 ) / 2 ))
-			angle:RotateAroundAxis(angle:Right(), math.NormalizeAngle(0 - ( y - self:GetTall()/ 2 ) / 2 ))
-			self:SetCamPos(angle:Forward() * distance - Vector(0,0,offset))
-			self:SetCamAngle(angle)
-		elseif input.IsMouseDown(MOUSE_RIGHT) then
-			distance =  math.min(( y - self:GetTall()/ 2 ) - 80, 0)
-			self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset) )
+	do --Camera manipulation
+		local distance = distance or -80
+		local offset = offset or -10
+		function PANEL:ResetCamera()
+			self:SetCamPos(Vector(0,0,0))
+			self:SetCamAngle(Angle(0,0,0))
+			distance = -80
+			offset = -10
+			self.CamTarget = nil
+			
+			self:SetTarget(LocalPlayer())
 		end
-	end	
+		
+		local target, pos, angle
+		function PANEL:OnCursorMoved(x, y)
+			pos, angle = self:GetCamOrigin()
+			angle.p = 0
+			angle.r = 0
+			if input.IsMouseDown(MOUSE_RIGHT) and input.IsMouseDown(MOUSE_LEFT) then
+				offset = (self:GetTall()/ 2 - y)/8 - 10
+				self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset))
+			elseif input.IsMouseDown(MOUSE_LEFT) then
+				angle:RotateAroundAxis(angle:Up(), math.NormalizeAngle(180 - ( x - self:GetWide()/ 2 ) / 2 ))
+				angle:RotateAroundAxis(angle:Right(), math.NormalizeAngle(0 - ( y - self:GetTall()/ 2 ) / 2 ))
+				self:SetCamPos(angle:Forward() * distance - Vector(0,0,offset))
+				self:SetCamAngle(angle)
+			elseif input.IsMouseDown(MOUSE_RIGHT) then
+				distance =  math.min(( y - self:GetTall()/ 2 ) - 80, 0)
+				self:SetCamPos(self.CamAngle:Forward() * distance - Vector(0,0,offset) )
+			end
+		end	
+	end
 	
 	function PANEL:OnFocusChanged(gained) if gained == false then forceDraw = false end end
 	function PANEL:Close()
