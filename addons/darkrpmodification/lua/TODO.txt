@@ -4,21 +4,17 @@
 *DONE*4. Code 'modifier' library. (e.g: local weight = weight + PLAYER:GetMod(MOD_WEIGHT))
 *DONE*5. Code 'clothing' library with in-game editor. (NOTE: use 'modifier' library for stat-editing.) (STYLE: similiar parsing to 'items'. F4 menu for clothing mods, link inventory system in.)
 *DONE*6. Code NPC banks.
-7. Code a drug system. (with an NPC to sell drugs to.)
-*DONE*8. Code a new soundURL.
-9. Code vehicle system. (with fuel, trunk-space, direct-url and "radio stations" stereos.) [VCMod integrated]
-10. Code 'Flag' library. (e.x: PLAYER:HasFlag(FLAG_COP))
-11. Mimic GTA-RP styled jobs
-12. Update lockpicks to be like GTA-RP.
-13. Code gang/faction system.
-14. Code low-resource turf system.
-15. Setup a weapon/melee weapon base.
-16. Code item-crafting system.
-17. Code corpse system.
-18. Implement gPhone or rPhone.
-19. Code a mask system.
-20. Code heist system. (Requires: Mask system.)
+*DONE*7. Code a new soundURL.
+8. Bouncing damage numbers.
+9. Dynamic NPC store system (w/ ability to obtain quests based off assigned NPC-ID)
+10. New MONSTER system.
+11. New quest system.
+12. Resource gathering system
+13. New spell system. 
+14. Trade menu.
+15. Guild system.
+16. Corpse system.
+17. Item crafting system.
 
 OTHER:
-*Continue work on Think'less/Self-contained VirtualWorlds module. (Think'less part is done, now self-contained.)
-*Integrate the new Entity:SetSubMaterial() for a GTA-RP like clothing system w/o the inefficiency/strain on CPU and R.A.M.
+*Integrate the new Entity:SetSubMaterial() for a GTA-RP like clothing system w/o the inefficiency/strain on CPU and R.A.M. (Don't know when I'll do this.)
