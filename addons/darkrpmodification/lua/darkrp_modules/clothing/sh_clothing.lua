@@ -23,7 +23,7 @@ function clothing.GetData(id)
 end
 
 function clothing.Register(tbl)
-	if !tbl or tbl.ID == nil then MsgN("[ERROR] no 'tbl.ID' sent to 'clothing.Register'.") return end
+	if not tbl or tbl.ID == nil then MsgN("[ERROR] no 'tbl.ID' sent to 'clothing.Register'.") return end
 	ClothingList[tbl.ID] = tbl
 end
 

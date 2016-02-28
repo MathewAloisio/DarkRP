@@ -76,8 +76,13 @@ function soundurl.PlayStream(url, flags, callback, parent, noplay)
 			table.insert(soundURLs, tbl)
 			if noplay == nil then
 				stream:Play()
+				stream:SetVolume(4) --Shouldn't change anything above 1 but it oddly seems to? No harm having this here anyway.
 			end
 		else
+			if parent ~= nil then
+				parent.soundOn = false
+				soundurl.MakeEntRefresh(parent) 
+			end		
 			MsgC(Color(255, 0, 30), string.format("[SoundURL] Failed to start URL stream, most likely the URL is invalid or not a direct link.\nURL: %q", url))
 			failed = 1
 			return
@@ -157,6 +162,7 @@ hook.Add("EntityRemoved", "SOUNDURL::EntityRemoved", function(entity)
 end)
 
 local function updateSoundEntity(entity)
+	if entity:GetVW() ~= -1 and entity:GetVW() ~= LocalPlayer():GetVW() then return end --Virtual Worlds compatability
 	if table.HasValue(blockedSoundEnts, entity) then return end
 	local entityActive = entity:GetNWBool("soundURLOn", false)
 	if entity.soundOn == false and entityActive == true then --turn on
@@ -199,6 +205,17 @@ function soundurl.SetEntityURL(entity, url)
 	updateSoundEntity(entity)
 end
 
+hook.Add("VW::OnChanged", "SOUNDURL::OnVWChanged", function() --Virtual World compatability
+	for i, v in pairs(soundURLs) do
+		if v.parent ~= nil and v.parent:GetVW() ~= -1 and v.parent:GetVW() ~= LocalPlayer():GetVW() then
+			soundurl.StopStream(i)	
+		end
+	end
+	for _, entity in pairs(ents.GetAll()) do
+		if entity.soundOn ~= nil then updateSoundEntity(entity) end
+	end
+end)
+
 hook.Add("NetworkEntityCreated", "SOUNDURL::EntityCreated", function(entity)
 	if entity.soundOn == nil then return end
 	updateSoundEntity(entity)
@@ -223,37 +240,39 @@ net.Receive("SOUNDURL::RefreshSoundURL", function(len)
 	updateSoundEntity(entity) 
 end)
 
-local lastRefresh = lastRefresh or 0
-hook.Add("Think", "SOUNDURL::Think", function() --sync/refresh streams
-	local canRefresh = lastRefresh <= CurTime()
-	for i,v in pairs(soundURLs) do
-		if v.parent ~= nil then
-			local pos
-			if v.parent:IsValid() and v.parent.soundSync == true and v.stream:IsValid() then
-				local vehicle = LocalPlayer():GetVehicle()
-				if IsValid(vehicle) and (v.parent == vehicle or (IsValid(vehicle:GetParent()) and v.parent == vehicle:GetParent())) then
-					v.stream:SetPos(LocalPlayer():GetPos())
-				else
-					pos = v.parent:GetPos()
-					v.stream:SetPos(pos)
+do
+	local lastRefresh = lastRefresh or 0
+	hook.Add("Think", "SOUNDURL::Think", function() --sync/refresh streams
+		local canRefresh = lastRefresh <= CurTime()
+		for i,v in pairs(soundURLs) do
+			if v.parent ~= nil then
+				local pos
+				if v.parent:IsValid() and v.parent.soundSync == true and v.stream:IsValid() then
+					local vehicle = LocalPlayer():GetVehicle()
+					if IsValid(vehicle) and (v.parent == vehicle or (IsValid(vehicle:GetParent()) and v.parent == vehicle:GetParent())) then						
+						v.stream:SetPos(EyePos())
+					else
+						pos = v.parent:GetPos()
+						v.stream:SetPos(pos)
+					end
+				elseif not v.parent:IsValid() then
+					soundurl.StopStream(i)
+					continue
 				end
-			elseif not v.parent:IsValid() then
-				soundurl.StopStream(i)
-				continue
-			end
-			if canRefresh == true and pos ~= nil and v.parent.soundOn == true and LocalPlayer():GetPos():Distance(pos) > 800 then
-				soundurl.StopStream(i)
-				if v.parent:GetNWBool("soundURLOn", false) == true then
-					soundurl.MakeEntRefresh(v.parent)
-				end			
+				if canRefresh == true and pos ~= nil and v.parent.soundOn == true and LocalPlayer():GetPos():Distance(pos) > 800 then
+					soundurl.StopStream(i)
+					if v.parent:GetNWBool("soundURLOn", false) == true then
+						soundurl.MakeEntRefresh(v.parent)
+					end			
+				end
 			end
 		end
-	end
-	if canRefresh then --refresh entities that WERE out of range.
-		for _,entity in pairs(refreshSoundEnts) do updateSoundEntity(entity) end
-		lastRefresh = CurTime() + 4 --refresh out-of-range sound-entities every 4 seconds.
-	end
-end)
+		if canRefresh then --refresh entities that WERE out of range.
+			for _,entity in pairs(refreshSoundEnts) do updateSoundEntity(entity) end
+			lastRefresh = CurTime() + 4 --refresh out-of-range sound-entities every 4 seconds.
+		end
+	end)
+end
 
 --Blacklist sound ent option.
 properties.Add( "blocksoundent", 
@@ -314,4 +333,26 @@ end)
 
 --TODO: UI below. (Don't forget we are returning the URL from the selected station/direct-URL.)
 
+local currentStation, stationTag
+net.Receive("RADIO::ChangeStation", function()
+	stationTag = CurTime() + 3
+	currentStation = net.ReadDouble()
+end)
 
+hook.Add("HUDPaint", "RADIO::HUDPaint", function()
+	if currentStation ~= nil and CurTime() < stationTag then
+		surface.SetFont("Trebuchet24")
+		local name
+		if currentStation == 0 then
+			name = "Radio Off"
+		else
+			name = radioStations[currentStation].name
+		end
+		local x, y = surface.GetTextSize(name)
+		draw.RoundedBox(8, (ScrW()/2) - (x/2) - 5, (ScrH()/2) - 25, x + 38, 50, Color(255, 140, 0, 180))
+		surface.SetDrawColor(255, 255, 255, 255)
+		surface.DrawTexturedRect((ScrW()/2) - (x/2) - 40, (ScrH()/2) - 30, 60, 60)
+		
+		draw.SimpleText(name, "Trebuchet24", (ScrW()/2) + 23, ScrH() / 2, Color(255, 255, 255, 255), 1, 1)
+	end
+end)

@@ -109,7 +109,7 @@ do --Clothing editor
 	end
 
 	local function AddVisualInstance(mdlPath)
-		--if !util.IsValidModel(mdlPath) then ErrorNoHalt("Model Not Valid") return end
+		--if not util.IsValidModel(mdlPath) then ErrorNoHalt("Model Not Valid") return end
 		local mdl = ClientsideModel(mdlPath,RENDERGROUP_OPAQUE)
 		local t = {Bone = parentBone, Pos = Vector(0,0,0), Ang = Angle(0,0,0), Scale = Vector(1,1,1), Model = mdlPath, Skin = 0, Material = mdl:GetMaterial(), VisualModel = mdl}			
 		local id = table.insert(offsets,t)
@@ -293,14 +293,33 @@ do --Clothing editor
 		ClothingEditorOff()
 	end
 
-	function SLIDERS:SetItem(clothingPos)
-		ClearItems()
+	do
+		local function fullCopy(tab)
+			if not tab then return end
+			local tbl = {}
+			for i,v in pairs(tab) do
+				if type(v) == "table" then
+					tbl[i] = fullCopy(v)
+				elseif type(v) == "Vector" then
+					tbl[i] = Vector(v.x,v.y,v.z)
+				elseif type(v) == "Angle" then
+					tbl[i] = Angle(v.p,v.y,v.r)
+				else
+					tbl[i] = v
+				end
+			end
+			return tbl
+		end
+		function SLIDERS:SetItem(clothingPos)
+			ClearItems()
 
-		if clothingPos then
-			offsets = table.Copy(clothingPos)
-			for index,data in pairs(offsets) do
-				local mdl = ClientsideModel(data.Model,RENDERGROUP_OPAQUE)
-				offsets[index].VisualModel = mdl
+			if clothingPos then
+				offsets = fullCopy(clothingPos)
+				PrintTable(offsets)
+				for index,data in pairs(offsets) do
+					local mdl = ClientsideModel(data.Model,RENDERGROUP_OPAQUE)
+					offsets[index].VisualModel = mdl
+				end
 			end
 		end
 	end
@@ -432,7 +451,7 @@ local function removeClothingSlot(player, slot)
 	for _,entity in pairs(player.Clothing[slot].components) do
 		entity:Remove()
 	end
-	player.Clothing[slot].rendered_id = nil
+	player.Clothing[slot].rendered_id = 0
 end
 
 local getClothingData = clothing.GetData
@@ -449,7 +468,7 @@ net.Receive("CLOTHING::NetworkPlayer", function(len)
 		if first ~= nil then player.Clothing[slot] = {} end
 		player.Clothing[slot].id = tbl[slot] or 0
 		if player.Clothing[slot].components == nil then player.Clothing[slot].components = {} end
-		if player.Clothing[slot].rendered_id ~= nil and player.Clothing[slot].rendered_id ~= player.Clothing[slot].id then removeClothingSlot(player, slot) end
+		if player.Clothing[slot].rendered_id ~= 0 and player.Clothing[slot].rendered_id ~= player.Clothing[slot].id then removeClothingSlot(player, slot) end
 		if player.Clothing[slot].id == 0 then continue end
 		player.Clothing[slot].rendered_id = player.Clothing[slot].id
 		for i,v in pairs(getClothingData(player.Clothing[slot].id)) do
@@ -470,7 +489,28 @@ hook.Add("EntityRemoved", "CLOTHING::RemovePlayer", function(entity)
 	end
 end)
 
+--Yup, we have to do this because we don't use SetNoDraw (which is synced in PostPlayerDraw below) in virtual worlds, so... here we go.
+hook.Add("VW::OnChanged", "CLOTHING::OnVWChanged", function() --Virtual worlds support. Lets hope theres no problem with source not sending us info about them and this calling, otherwise we'll need a PreVWChanged(newVW) hook.
+	for _,player in pairs(player.GetAll()) do
+		if player:GetVW() == LocalPlayer():GetVW() then
+			if player.Clothing == nil then --Should be trustworthy because we should always beable to remove a players clothing when we change out of their VW.
+				--Ask the server for info about the player, because we don't have it.
+				net.Start("CLOTHING::ClientRequest")
+					net.WriteEntity(player)
+				net.SendToServer() --Servrer should fill us in, this should be the end of that! :)
+			end
+		else
+			if player.Clothing == nil then continue end --According to our client this player has no clothes, so why bother removing them?
+			for slot=0,TOTAL_CLOTHING_SLOTS do
+				removeClothingSlot(player, slot)
+			end		
+		end
+	end
+end)
+
+local forceDraw = forceDraw or false
 hook.Add("PostPlayerDraw", "CLOTHING::RenderPlayer", function(player)
+	if player == LocalPlayer() and forceDraw == true then return end
 	if player.Clothing == nil then return end
 	for slot=0,TOTAL_CLOTHING_SLOTS do
 		if player.Clothing[slot].id == 0 then continue end
@@ -485,11 +525,15 @@ hook.Add("PostPlayerDraw", "CLOTHING::RenderPlayer", function(player)
 				matrix:Rotate(tbl[i].Angles or Angle(0,0,0))
 				matrix:Translate(tbl[i].Pos or Vector(0,0,0))
 
+				--local pos,ang = matrix:GetTranslation(),matrix:GetAngles()
 				entity:SetPos(matrix:GetTranslation())
 				entity:SetAngles(matrix:GetAngles())
-			end
-			if LocalPlayer():GetNoDraw() == true and entity:GetNoDraw() ~= true then 
-				entity:SetNoDraw(true)
+
+
+
+				
+				--entity:SetRenderOrigin(pos)
+				--entity:SetRenderAngles(ang)
 			end
 			if drawPlayer ~= entity:GetNoDraw() then entity:SetNoDraw(drawPlayer) end --Sync NoDraw status.
 		end
@@ -537,7 +581,8 @@ do --Register VGUI
 		self.refreshButt.DoClick = function() self:ResetCamera() end
 	end
 	
-	function PANEL:SetTarget(entity) --TODO: Figure out how to move the player into the middle of 'self'
+
+	function PANEL:SetTarget(entity)
 		if IsValid(entity) then
 			self.CamTarget = entity
 			local pos, angle = self:GetCamOrigin()
@@ -569,10 +614,32 @@ do --Register VGUI
 		return self.lastCamOrigin, self.lastCamAngle
 	end
 	
+	function PANEL:DrawClothes() --TODO: Make LocalPlayer()'s clothing remove when we close this panel.
+		if LocalPlayer().Clothing == nil then return end
+		for slot=0,TOTAL_CLOTHING_SLOTS do
+			if LocalPlayer().Clothing[slot].id == 0 then continue end
+			local tbl = getClothingData(LocalPlayer().Clothing[slot].id)
+			for i,entity in pairs(LocalPlayer().Clothing[slot].components) do
+				if not IsValid(entity) then continue end
+				local boneID = LocalPlayer():LookupBone(tbl[i].Bone)
+				if boneID ~= -1 then
+					local matrix = LocalPlayer():GetBoneMatrix(boneID)
+
+					matrix:Rotate(tbl[i].Angles or Angle(0,0,0))
+					matrix:Translate(tbl[i].Pos or Vector(0,0,0))
+
+					entity:SetPos(matrix:GetTranslation())
+					entity:SetAngles(matrix:GetAngles())
+					entity:DrawModel()
+				end
+			end
+		end
+	end
+		
 	function PANEL:PaintOver()
 	end
 	
-	local forceDraw = forceDraw or false
+
 	function PANEL:Paint()
 		if not IsValid(LocalPlayer()) then return end
 		forceDraw = true
@@ -593,6 +660,7 @@ do --Register VGUI
 			end
 			
 			LocalPlayer():DrawModel()
+			self:DrawClothes()
 				
 			render.SuppressEngineLighting(false)
 			cam.IgnoreZ(false)
@@ -633,11 +701,21 @@ do --Register VGUI
 		end	
 	end
 	
-	function PANEL:OnFocusChanged(gained) if gained == false then forceDraw = false end end
-	function PANEL:Close()
-		forceDraw = false
-		self:Remove()
+
+
+
+
+	function PANEL:OnParentHide()
+		forceDraw = false 
+		for slot=0,TOTAL_CLOTHING_SLOTS do
+			for _,entity in pairs(LocalPlayer().Clothing[slot].components) do
+				if not IsValid(entity) then continue end
+				entity:SetNoDraw(true)
+			end
+		end
 	end
+	function PANEL:OnRemove() self:OnParentHide() end
+	
 	derma.DefineControl("ClothingPanel", "A panel showing the players model and clothing.", PANEL, "DButton")
 	
 	hook.Add("ShouldDrawLocalPlayer", "CLOTHING::DrawLocalPlayer", function(player) if forceDraw == true then return true end end)
@@ -647,6 +725,12 @@ local function buildClothingPanel()
 	local tab = vgui.Create("DPanel")
 	tab:StretchToParent(5,5,5,5)
 	tab:SetSkin("DarkRP")
+	tab.OnParentHide = function()
+		for _,child in pairs(tab:GetChildren()) do
+			if child.OnParentHide == nil then continue end
+			child:OnParentHide()
+		end		
+	end
 	tab.Paint = function() draw.RoundedBox(8, 0, 0, tab:GetWide(), tab:GetTall(), Color(GetConVarNumber("background1"), GetConVarNumber("background2"), GetConVarNumber("background3"), GetConVarNumber("background4"))) end
 	tab.character = vgui.Create("ClothingPanel", tab)
 	tab.character:SetSize(tab:GetWide()/2.25, tab:GetTall())

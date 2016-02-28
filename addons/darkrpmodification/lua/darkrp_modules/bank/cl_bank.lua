@@ -28,7 +28,7 @@ end
 
 local Bank = Bank or {}
 function PANEL:RebuildInventory()
-	self.inventory.list:Clear()
+	self.inventory.list:Clear(true)
 	for slot=0,MAX_INV_SLOTS do
 		local id = inventory.Get(slot)[ITEM_ID]
 		local panel
@@ -112,7 +112,7 @@ function PANEL:Init()
 end
 
 function PANEL:RebuildItems()
-	self.bankList:Clear()
+	self.bankList:Clear(true)
 	for slot=0,MAX_BANK_SLOTS do
 		local id = Bank[slot][ITEM_ID] or 0
 		local panel

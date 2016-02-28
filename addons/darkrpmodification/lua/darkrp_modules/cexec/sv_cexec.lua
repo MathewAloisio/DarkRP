@@ -1,7 +1,7 @@
 concommand.Add("rp_forcecexec", function(player, cmd, args) 
 	if not ply:IsSuperAdmin() then DarkRP.notify(player, 1, 4, "Only super-admins can use this command!") return end
 	if #args < 3 then ply:PrintMessage(HUD_PRINTTALK, "USAGE: rp_cexec [target] [command] [arguments].") return end
-	local who = GAMEMODE:FindPlayer(args[1])
+	local who = DarkRP.findPlayer(args[1])
 	if IsValid(who) and who:IsPlayer() then
 		umsg.Start("unblocked_cexec", who)
 			umsg.String(tostring(args[2]))

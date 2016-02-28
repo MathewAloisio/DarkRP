@@ -122,7 +122,7 @@ local function makeItemSlot(id, slot)
 				if (v.ShowOption ~= nil and v.ShowOption() == false) then continue end
 				menu:AddOption(v.Name, function()
 					RunConsoleCommand("rp_invaction", panel.Slot, i) 
-					MenuList:Clear()
+					MenuList:Clear(true)
 					for slot=0,MAX_INV_SLOTS do
 						makeItemSlot(Inv[slot][ITEM_ID], slot)
 					end
@@ -170,7 +170,7 @@ net.Receive("networkInventory", function(len)
 	Inv = net.ReadTable()
 
 	if IsValid(MenuList) then
-		MenuList:Clear() --rebuild item icons.
+		MenuList:Clear(true) --rebuild item icons.
 		for slot=0,MAX_INV_SLOTS do
 			makeItemSlot(Inv[slot][ITEM_ID], slot)
 		end
@@ -201,7 +201,7 @@ net.Receive("startCombine", function(len)
 	CombineInv:SetDraggable(false)
 	CombineInv.OnClose = function()
 		gui.EnableScreenClicker(false)
-		CombineInv.inventory.list:Clear()
+		CombineInv.inventory.list:Clear(true)
 		CombineInv = nil
 	end
 	CombineInv:Center()
@@ -210,7 +210,7 @@ net.Receive("startCombine", function(len)
 	CombineInv.inventory:StretchToParent(defines.ScreenScale(5), defines.ScreenScale(25), defines.ScreenScale(5), defines.ScreenScale(5))
 	CombineInv.inventory:SetVisible(true)
 	CombineInv.inventory.Rebuild = function()
-		CombineInv.inventory.list:Clear()
+		CombineInv.inventory.list:Clear(true)
 		for i=0,MAX_INV_SLOTS do
 			local idex = Inv[i][ITEM_ID]
 			local panel
