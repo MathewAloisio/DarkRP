@@ -14,7 +14,7 @@ function ENTITY:SetVW(val)
 	val = math.floor(val) --Redundancy
 	if not self:GetCustomCollisionCheck() then self:SetCustomCollisionCheck(true) end
 	if self:IsPlayer() then
-		self:ConCommand("stopsound")
+		ForceConsoleCommand(player, "stopsound")
 		local wep = self:GetActiveWeapon()
 		if IsValid(wep) then wep:SetVW(val) end
 	end
